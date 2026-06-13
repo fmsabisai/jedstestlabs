@@ -842,9 +842,9 @@ const ACOLS=['#febe18','#ffd54f','#ff8f00','#a5d6a7','#80deea','#ce93d8','#ef9a9
 // ── HELPERS ──
 const $=id=>document.getElementById(id);
 function fd(d){if(!d)return'—';try{const dt=d.toDate?d.toDate():new Date(d);return dt.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}catch{return String(d)}}
-function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2600);}
-function openMo(id){$(id).classList.add('on');}
-function closeMo(id){$(id).classList.remove('on');}
+window.toast=function(m){const t=$('toast');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2600);}
+window.openMo=function(id){$(id).classList.add('on');}
+window.closeMo=function(id){$(id).classList.remove('on');}
 function bdg(s){const m={Received:'b-b','In Progress':'b-o',Completed:'b-g',Reported:'b-d',Pass:'b-g',Fail:'b-r',operational:'b-g','out of service':'b-r','needs maintenance':'b-o',Urgent:'b-r','Standard Priority':'b-d',admin:'b-p',manager:'b-b',technologist:'b-g',technician:'b-d'};return`<span class="bdg ${m[s]||'b-d'}">${s}</span>`}
 function showErr(id,m){const e=$(id);e.textContent=m;e.classList.add('on');}
 function hideErr(id){$(id).classList.remove('on');}
@@ -892,8 +892,13 @@ window.doRegister=async function(){
     if(snap.empty){showErr('e-reg','Lab code not found. Check with your Admin.');return;}
     const labId=snap.docs[0].id;
     const cred=await createUserWithEmailAndPassword(auth,em,pw);
+    // Write user doc BEFORE auth state change can fire bootApp
     await setDoc(doc(db,'users',cred.user.uid),{firstName:fn,lastName:ln,email:em,role,labId,labCode:lc,status:'active',createdAt:serverTimestamp()});
-    $('ok-reg').textContent='Account created! You can now sign in.';$('ok-reg').classList.add('on');
+    // Sign out so they log in fresh (avoids race where onAuthStateChanged fires before doc is ready)
+    await signOut(auth);
+    $('ok-reg').textContent='Account created! Sign in with your email and password.';
+    $('ok-reg').classList.add('on');
+    atab('login');$('l-em').value=em;
   }catch(e){showErr('e-reg',e.message.replace('Firebase:','').trim());}
 };
 
@@ -906,23 +911,41 @@ window.doNewLab=async function(){
   if(!nm||!inst||!fn||!ln||!em||!pw){showErr('e-nl','All fields are required.');return;}
   const lc='LAB-'+nm.replace(/[^A-Z0-9]/gi,'').toUpperCase().slice(0,4)+'-'+Math.floor(1000+Math.random()*9000);
   try{
+    // Step 1: create Firebase Auth account
     const cred=await createUserWithEmailAndPassword(auth,em,pw);
+    const uid=cred.user.uid;
+    // Step 2: sign out immediately to prevent onAuthStateChanged race
+    await signOut(auth);
+    // Step 3: write all Firestore docs while signed out
     const labRef=await addDoc(collection(db,'labs'),{
       name:nm,institution:inst,labCode:lc,labType:'general',
       primaryColor:'#da1f26',accentColor:'#febe18',
       samplePrefix:'LAB-',vatRate:15,tagline:'',phone:'',email:'',
       disclaimer:'This report relates only to the samples supplied to this laboratory.',
-      testCatalog:CATS.general,adminUid:cred.user.uid,setupDone:false,createdAt:serverTimestamp()
+      testCatalog:CATS.general,adminUid:uid,setupDone:false,createdAt:serverTimestamp()
     });
-    await setDoc(doc(db,'users',cred.user.uid),{firstName:fn,lastName:ln,email:em,role:'admin',labId:labRef.id,labCode:lc,status:'active',createdAt:serverTimestamp()});
+    await setDoc(doc(db,'users',uid),{firstName:fn,lastName:ln,email:em,role:'admin',labId:labRef.id,labCode:lc,status:'active',createdAt:serverTimestamp()});
+    // Step 4: sign back in — now onAuthStateChanged will find both docs ready
+    await signInWithEmailAndPassword(auth,em,pw);
   }catch(e){showErr('e-nl',e.message.replace('Firebase:','').trim());}
 };
 
 // ── AUTH STATE ──
 onAuthStateChanged(auth,async user=>{
   if(!user){showScreen('screen-auth');return;}
-  const ud=await getDoc(doc(db,'users',user.uid));
-  if(!ud.exists()){await signOut(auth);showScreen('screen-auth');return;}
+  // Retry up to 5x with 600ms gaps — handles Firestore propagation delay after account creation
+  let ud=null;
+  for(let i=0;i<5;i++){
+    const snap=await getDoc(doc(db,'users',user.uid));
+    if(snap.exists()){ud=snap;break;}
+    await new Promise(r=>setTimeout(r,600));
+  }
+  if(!ud){
+    // User doc still not found — show error, sign out
+    showScreen('screen-auth');
+    showErr('e-login','Account created but profile not ready yet. Please sign in again.');
+    await signOut(auth);return;
+  }
   CU={...ud.data(),uid:user.uid};
   CL=CU.labId;
   const ld=await getDoc(doc(db,'labs',CL));
@@ -1102,8 +1125,8 @@ window.addEq=async function(){const nm=$('eq-nm').value.trim();if(!nm){toast('En
 // ── QUOTATION ──
 function initQ(){qLines=[{d:'',c:0,q:1}];renderQL();}
 window.addQL=function(){qLines.push({d:'',c:0,q:1});renderQL();};
-function renderQL(){$('q-lns').innerHTML=qLines.map((l,i)=>`<tr><td><input type="text" value="${l.d}" placeholder="Test / service" oninput="qLines[${i}].d=this.value" style="width:100%;border:1px solid var(--bdr);padding:5px 8px;font-family:var(--f);font-size:12px;border-radius:var(--r)"></td><td><input type="number" value="${l.c}" oninput="qLines[${i}].c=parseFloat(this.value)||0;calcQ()" style="width:85px;text-align:right;border:1px solid var(--bdr);padding:5px;font-family:monospace;font-size:12px;border-radius:var(--r)"></td><td><input type="number" value="${l.q}" min="1" oninput="qLines[${i}].q=parseInt(this.value)||1;calcQ()" style="width:50px;text-align:right;border:1px solid var(--bdr);padding:5px;font-family:monospace;font-size:12px;border-radius:var(--r)"></td><td style="font-family:monospace;text-align:right;font-size:12px">${(l.c*l.q).toFixed(2)}</td><td><button class="btn btn-lite btn-xs" onclick="qLines.splice(${i},1);renderQL()">✕</button></td></tr>`).join('');calcQ();}
-function calcQ(){const sub=qLines.reduce((a,l)=>a+l.c*l.q,0),vat=sub*(LAB?.vatRate||15)/100;$('q-sub').textContent='N$ '+sub.toFixed(2);$('q-vat').textContent='N$ '+vat.toFixed(2);$('q-tot').textContent='N$ '+(sub+vat).toFixed(2);$('q-vl').textContent=`VAT (${LAB?.vatRate||15}%)`;}
+window.renderQL=function(){$('q-lns').innerHTML=qLines.map((l,i)=>`<tr><td><input type="text" value="${l.d}" placeholder="Test / service" oninput="qLines[${i}].d=this.value" style="width:100%;border:1px solid var(--bdr);padding:5px 8px;font-family:var(--f);font-size:12px;border-radius:var(--r)"></td><td><input type="number" value="${l.c}" oninput="qLines[${i}].c=parseFloat(this.value)||0;calcQ()" style="width:85px;text-align:right;border:1px solid var(--bdr);padding:5px;font-family:monospace;font-size:12px;border-radius:var(--r)"></td><td><input type="number" value="${l.q}" min="1" oninput="qLines[${i}].q=parseInt(this.value)||1;calcQ()" style="width:50px;text-align:right;border:1px solid var(--bdr);padding:5px;font-family:monospace;font-size:12px;border-radius:var(--r)"></td><td style="font-family:monospace;text-align:right;font-size:12px">${(l.c*l.q).toFixed(2)}</td><td><button class="btn btn-lite btn-xs" onclick="qLines.splice(${i},1);renderQL()">✕</button></td></tr>`).join('');calcQ();}
+window.calcQ=function(){const sub=qLines.reduce((a,l)=>a+l.c*l.q,0),vat=sub*(LAB?.vatRate||15)/100;$('q-sub').textContent='N$ '+sub.toFixed(2);$('q-vat').textContent='N$ '+vat.toFixed(2);$('q-tot').textContent='N$ '+(sub+vat).toFixed(2);$('q-vl').textContent=`VAT (${LAB?.vatRate||15}%)`;}
 window.saveQ=async function(){const cl=$('q-cl').value;if(!cl){toast('Enter client name');return;}await addDoc(collection(db,'quotes'),{labId:CL,quoteNum:$('q-no').value,date:$('q-dt').value,client:cl,lines:qLines,vatRate:LAB?.vatRate||15,createdBy:CU.uid,createdAt:serverTimestamp()});toast('Quotation saved');initQ();};
 
 // ── CUSTOMIZE ──
