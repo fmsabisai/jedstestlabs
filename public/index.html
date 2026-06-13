@@ -1,0 +1,2006 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Civil Lab Manager</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Raleway:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
+:root{
+  --red:#da1f26;--red-d:#b01820;--red-p:#fce8e9;
+  --gold:#febe18;--gold-d:#d49e00;--gold-p:#fff8e1;
+  --ink:#333333;--ink-m:#666666;--ink-l:#999999;--ink-g:#cccccc;
+  --bg:#f2f2f2;--w:#ffffff;--bdr:#dddddd;
+  --green:#2e7d32;--green-p:#e8f5e9;
+  --blue:#1565c0;--blue-p:#e3f0ff;
+  --r:3px;--sh:0 1px 3px rgba(0,0,0,.12);--shm:0 4px 12px rgba(0,0,0,.18);
+  --lp:var(--red);--la:var(--gold);
+  --font:'Raleway','Arial Rounded MT Bold',Arial,sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--ink);font-size:13px;min-height:100vh}
+
+/* ── AUTH SCREEN ─────────── */
+#auth-screen{
+  position:fixed;inset:0;background:var(--ink);
+  display:flex;align-items:center;justify-content:center;z-index:9000;
+}
+.auth-card{
+  background:var(--w);border-radius:6px;
+  width:420px;overflow:hidden;box-shadow:var(--shm);
+}
+.auth-logo{
+  background:var(--lp);color:#fff;padding:24px;text-align:center;
+}
+.auth-logo .al-name{font-size:22px;font-weight:800;letter-spacing:.04em;text-transform:uppercase}
+.auth-logo .al-sub{font-size:11px;opacity:.8;margin-top:3px;letter-spacing:.06em}
+.auth-body{padding:24px}
+.auth-tabs{display:flex;border-bottom:2px solid var(--bdr);margin-bottom:20px}
+.auth-tab{flex:1;padding:9px;text-align:center;font-size:12px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.06em;cursor:pointer;color:var(--ink-l);
+  border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s}
+.auth-tab.active{color:var(--lp);border-bottom-color:var(--lp)}
+.auth-panel{display:none}.auth-panel.active{display:block}
+.fg{display:flex;flex-direction:column;gap:4px;margin-bottom:12px}
+.fg label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-m)}
+.fg input,.fg select{padding:9px 11px;border:1px solid var(--bdr);border-radius:var(--r);
+  font-family:var(--font);font-size:13px;color:var(--ink);transition:border-color .15s}
+.fg input:focus,.fg select:focus{outline:none;border-color:var(--lp)}
+.auth-err{background:var(--red-p);color:var(--red);font-size:12px;padding:8px 10px;
+  border-radius:var(--r);margin-bottom:10px;display:none}
+.auth-err.show{display:block}
+.btn-auth{width:100%;padding:10px;background:var(--lp);color:#fff;border:none;
+  border-radius:var(--r);font-family:var(--font);font-size:13px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.05em;cursor:pointer;transition:background .14s}
+.btn-auth:hover{background:var(--red-d)}
+.auth-alt{text-align:center;margin-top:14px;font-size:12px;color:var(--ink-l)}
+.auth-alt a{color:var(--lp);cursor:pointer;font-weight:600}
+
+/* ── SETUP WIZARD ───────── */
+#wizard-screen{
+  position:fixed;inset:0;background:rgba(0,0,0,.55);
+  display:none;align-items:center;justify-content:center;z-index:8000;
+}
+.wizard-card{background:var(--w);border-radius:6px;width:600px;max-height:90vh;overflow-y:auto;box-shadow:var(--shm)}
+.wizard-head{background:var(--lp);color:#fff;padding:16px 20px;
+  display:flex;justify-content:space-between;align-items:center}
+.wizard-head h2{font-size:15px;font-weight:800;letter-spacing:.04em;text-transform:uppercase}
+.wiz-step-ind{font-size:12px;opacity:.75}
+.wiz-progress{height:4px;background:rgba(255,255,255,.25)}
+.wiz-progress-bar{height:100%;background:var(--la);transition:width .3s}
+.wizard-body{padding:20px}
+.wizard-foot{padding:14px 20px;border-top:1px solid var(--bdr);display:flex;justify-content:space-between;gap:8px}
+.wiz-step{display:none}.wiz-step.active{display:block}
+
+/* lab type grid */
+.lt-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
+.lt-card{border:2px solid var(--bdr);border-radius:var(--r);padding:14px 10px;
+  text-align:center;cursor:pointer;transition:all .15s}
+.lt-card:hover{border-color:var(--lp);background:var(--red-p)}
+.lt-card.sel{border-color:var(--lp);background:var(--red-p)}
+.lt-icon{font-size:24px;margin-bottom:6px}
+.lt-name{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+
+/* test catalog */
+.test-cat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px;max-height:260px;overflow-y:auto}
+.tc-chip{
+  display:flex;align-items:center;gap:6px;padding:6px 8px;
+  border:1px solid var(--bdr);border-radius:var(--r);cursor:pointer;font-size:11px;
+  font-weight:600;transition:all .15s;
+}
+.tc-chip input[type=checkbox]{accent-color:var(--lp);width:13px;height:13px;flex-shrink:0;cursor:pointer}
+.tc-chip:hover{background:var(--gold-p);border-color:var(--gold)}
+.tc-chip.checked{background:var(--red-p);border-color:var(--lp);color:var(--lp)}
+
+/* color pickers */
+.cp-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px}
+.cp-item{display:flex;flex-direction:column;gap:6px}
+.cp-item label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-m)}
+.cp-swatches{display:flex;gap:6px;flex-wrap:wrap}
+.swatch{width:28px;height:28px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all .15s}
+.swatch.active{border-color:var(--ink);transform:scale(1.15)}
+.cp-custom{display:flex;align-items:center;gap:6px;margin-top:6px}
+.cp-custom input[type=color]{width:28px;height:28px;border:none;padding:0;cursor:pointer;border-radius:50%;background:none}
+
+/* ── TOP NAV ─────────────── */
+#topnav{
+  background:var(--ink);height:46px;display:flex;align-items:stretch;
+  position:sticky;top:0;z-index:100;box-shadow:0 2px 6px rgba(0,0,0,.3);
+}
+.nav-brand{
+  display:flex;align-items:center;gap:8px;padding:0 14px;
+  background:var(--lp);color:#fff;font-weight:800;font-size:12px;
+  letter-spacing:.04em;text-transform:uppercase;white-space:nowrap;min-width:150px;
+}
+.nav-brand .nb-sub{font-weight:400;font-size:9px;opacity:.8;display:block;letter-spacing:.06em}
+.nav-brand .nb-code{font-size:9px;background:rgba(0,0,0,.2);padding:1px 5px;border-radius:20px;margin-top:2px;display:inline-block}
+.nav-tabs{display:flex;align-items:stretch;flex:1}
+.nav-tab{
+  display:flex;align-items:center;gap:6px;padding:0 14px;
+  color:rgba(255,255,255,.65);font-size:11px;font-weight:600;
+  letter-spacing:.05em;text-transform:uppercase;cursor:pointer;
+  border-bottom:3px solid transparent;transition:all .15s;white-space:nowrap;
+  user-select:none;
+}
+.nav-tab:hover{color:#fff;background:rgba(255,255,255,.06)}
+.nav-tab.active{color:var(--la);border-bottom-color:var(--la);background:rgba(254,190,24,.08)}
+.nav-tab.admin-only{display:none}
+.nav-tab .ti{font-size:14px;opacity:.85}
+.nav-end{display:flex;align-items:center;gap:0;margin-left:auto}
+.nav-user{
+  display:flex;align-items:center;gap:6px;padding:0 12px;
+  color:rgba(255,255,255,.7);font-size:11px;border-right:1px solid rgba(255,255,255,.1);
+}
+.nav-logout{
+  display:flex;align-items:center;gap:6px;padding:0 16px;
+  background:var(--la);color:var(--ink);font-size:11px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.05em;cursor:pointer;height:100%;
+  transition:background .15s;
+}
+.nav-logout:hover{background:var(--gold-d);color:#fff}
+
+/* ── MAIN SHELL ──────────── */
+#shell{display:flex;height:calc(100vh - 46px);overflow:hidden;}
+#main-app{display:none;flex-direction:column;min-height:100vh}
+#main-app.visible{display:flex;flex-direction:column;}
+#auth-screen.hidden,#wizard-screen.hidden{display:none!important}
+
+/* ── LEFT PANEL ──────────── */
+#left-panel{
+  width:256px;flex-shrink:0;background:var(--w);
+  border-right:2px solid var(--bdr);display:flex;flex-direction:column;overflow:hidden;
+}
+.panel-hdr{
+  background:var(--lp);color:#fff;padding:9px 12px;
+  display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
+}
+.ph-title{font-weight:700;font-size:12px;letter-spacing:.05em;text-transform:uppercase}
+.ph-actions{display:flex;gap:5px;align-items:center}
+.srch{
+  display:flex;align-items:center;padding:6px 10px;
+  border-bottom:1px solid var(--bdr);gap:5px;flex-shrink:0;
+}
+.srch input{
+  flex:1;border:1px solid var(--bdr);padding:5px 8px;border-radius:var(--r);
+  font-family:var(--font);font-size:12px;background:var(--bg);color:var(--ink);
+}
+.srch input:focus{outline:none;border-color:var(--lp)}
+.panel-cols{
+  display:grid;grid-template-columns:90px 1fr 100px;
+  padding:5px 10px;font-size:10px;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--ink-m);border-bottom:2px solid var(--bdr);
+  background:var(--bg);flex-shrink:0;
+}
+.panel-list{flex:1;overflow-y:auto}
+.prow{
+  display:grid;grid-template-columns:90px 1fr 100px;
+  padding:8px 10px;border-bottom:1px solid var(--bdr);
+  cursor:pointer;transition:background .12s;align-items:center;position:relative;
+}
+.prow:hover{background:var(--gold-p)}
+.prow.active{background:var(--red-p);border-left:3px solid var(--lp)}
+.prow .pr-id{font-weight:700;font-size:11px;font-family:monospace;color:var(--lp)}
+.prow .pr-name{font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.prow .pr-date{font-size:10px;color:var(--ink-m)}
+.prow-del{
+  position:absolute;right:4px;top:50%;transform:translateY(-50%);
+  background:none;border:none;color:var(--red);cursor:pointer;font-size:13px;
+  opacity:0;transition:opacity .15s;padding:2px 4px;
+}
+.prow:hover .prow-del{opacity:1}
+
+/* lab switcher */
+.lab-switcher{
+  border-top:1px solid var(--bdr);padding:8px;flex-shrink:0;
+  background:var(--bg);display:none;
+}
+.lab-switcher.visible{display:block}
+.ls-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-l);margin-bottom:4px}
+.ls-select{width:100%;border:1px solid var(--bdr);border-radius:var(--r);padding:5px 7px;font-family:var(--font);font-size:12px}
+
+/* ── CONTENT AREA ────────── */
+#main-content{flex:1;min-height:0;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:10px;}
+.view{display:none;flex-direction:column;width:100%;}
+.view.active{display:flex;flex:1;min-height:0;}
+
+/* ── RIGHT PANEL ─────────── */
+#right-panel{
+  width:196px;flex-shrink:0;background:var(--w);
+  border-left:2px solid var(--bdr);display:flex;flex-direction:column;overflow:hidden;
+}
+.sum-hdr{background:var(--ink);color:#fff;padding:9px 12px;
+  font-weight:700;font-size:11px;letter-spacing:.06em;text-transform:uppercase;flex-shrink:0}
+.sum-body{flex:1;overflow-y:auto;padding:6px 0}
+.sum-cat{padding:5px 10px 2px;font-size:9px;font-weight:800;text-transform:uppercase;
+  letter-spacing:.1em;color:var(--ink-m);border-bottom:1px solid var(--bdr);margin-bottom:2px}
+.sum-item{display:flex;align-items:center;justify-content:space-between;
+  padding:4px 10px;font-size:11px;font-weight:600;color:var(--lp)}
+.sum-rm{width:17px;height:17px;border-radius:50%;background:var(--ink-g);
+  border:none;cursor:pointer;font-size:10px;color:#fff;display:flex;
+  align-items:center;justify-content:center;transition:background .12s;flex-shrink:0}
+.sum-rm:hover{background:var(--lp)}
+.sum-save{
+  padding:10px 12px;background:var(--green);color:#fff;font-family:var(--font);
+  font-weight:700;font-size:12px;border:none;cursor:pointer;width:100%;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  letter-spacing:.04em;text-transform:uppercase;transition:background .15s;flex-shrink:0;
+}
+.sum-save:hover{background:#1b5e20}
+
+/* ── SECTION BLOCKS ───────── */
+.sb{background:var(--w);border:1px solid var(--bdr);border-radius:var(--r);overflow:hidden}
+.sbh{background:var(--lp);color:#fff;padding:8px 14px;display:flex;align-items:center;justify-content:space-between}
+.sbh.gold{background:var(--la);color:var(--ink)}
+.sbh.dark{background:var(--ink);color:#fff}
+.sbh.green{background:var(--green);color:#fff}
+.sbh-t{font-weight:700;font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+.sbh-a{display:flex;gap:5px;align-items:center}
+
+/* ── TEST TILES ──────────── */
+.test-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;padding:10px 12px}
+.ttile{
+  background:var(--lp);color:#fff;border-radius:var(--r);
+  padding:7px 7px 5px;display:flex;align-items:center;justify-content:space-between;
+  cursor:pointer;transition:background .12s;gap:3px;
+}
+.ttile:hover{background:var(--red-d)}
+.ttile.sel{background:var(--ink);outline:2px solid var(--la)}
+.tt-i{flex:1;min-width:0}
+.tt-n{font-size:11px;font-weight:700;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tt-s{font-size:9px;opacity:.7;display:block;letter-spacing:.03em}
+.tt-a{width:19px;height:19px;border-radius:50%;background:rgba(255,255,255,.2);
+  display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
+.ttile:hover .tt-a{background:rgba(255,255,255,.35)}
+
+/* profiles grid */
+.prof-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;padding:10px 12px}
+.prof-chk{display:flex;align-items:center;gap:5px;cursor:pointer;font-size:11px;font-weight:600}
+.prof-chk input{accent-color:var(--lp);width:13px;height:13px;cursor:pointer}
+
+/* ── FORM ─────────────────── */
+.frow{display:grid;gap:10px;padding:8px 14px 10px}
+.frow.c2{grid-template-columns:1fr 1fr}
+.frow.c3{grid-template-columns:1fr 1fr 1fr}
+.fg2{display:flex;flex-direction:column;gap:4px}
+.fg2 label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-m)}
+.fg2 input,.fg2 select,.fg2 textarea{
+  padding:7px 10px;border:1px solid var(--bdr);border-radius:var(--r);
+  font-family:var(--font);font-size:13px;color:var(--ink);background:var(--w);
+  transition:border-color .15s;width:100%;
+}
+.fg2 input:focus,.fg2 select:focus,.fg2 textarea:focus{outline:none;border-color:var(--lp)}
+.fg2 textarea{resize:vertical;min-height:58px}
+
+/* ── BUTTONS ─────────────── */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;
+  border-radius:var(--r);border:none;cursor:pointer;font-family:var(--font);
+  font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;transition:all .14s}
+.btn-r{background:var(--lp);color:#fff}.btn-r:hover{background:var(--red-d)}
+.btn-g{background:var(--la);color:var(--ink)}.btn-g:hover{background:var(--gold-d);color:#fff}
+.btn-d{background:var(--ink);color:#fff}.btn-d:hover{background:#111}
+.btn-gh{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3)}
+.btn-gh:hover{background:rgba(255,255,255,.28)}
+.btn-sm{padding:4px 9px;font-size:10px}
+.btn-ico{padding:4px 7px;font-size:13px}
+.btn-green{background:var(--green);color:#fff}.btn-green:hover{background:#1b5e20}
+
+/* ── TABLE ────────────────── */
+.dt{width:100%;border-collapse:collapse}
+.dt th{background:var(--bg);font-size:10px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.08em;color:var(--ink-m);padding:7px 10px;border-bottom:2px solid var(--bdr);
+  text-align:left;white-space:nowrap}
+.dt td{padding:8px 10px;border-bottom:1px solid var(--bdr);font-size:12px;vertical-align:middle}
+.dt tr:last-child td{border-bottom:none}
+.dt tr:hover td{background:#fafafa}
+
+/* ── BADGES ──────────────── */
+.bdg{display:inline-flex;align-items:center;padding:2px 7px;border-radius:20px;
+  font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
+.br{background:var(--red-p);color:var(--red)}
+.bg{background:var(--green-p);color:var(--green)}
+.bgo{background:var(--gold-p);color:var(--gold-d)}
+.bb{background:var(--blue-p);color:var(--blue)}
+.bd{background:#eee;color:var(--ink-m)}
+.bp{background:#f3e5f5;color:#6a1b9a}
+
+/* ── STATS ROW ────────────── */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;flex-shrink:0}
+.sc{background:var(--w);border:1px solid var(--bdr);border-radius:var(--r);
+  padding:12px 14px;border-top:3px solid var(--lp)}
+.sc.gold-t{border-top-color:var(--la)}
+.sc.green-t{border-top-color:var(--green)}
+.sc.dark-t{border-top-color:var(--ink)}
+.sc-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-m)}
+.sc-val{font-size:24px;font-weight:800;margin:2px 0}
+.sc-sub{font-size:11px;color:var(--ink-l)}
+
+/* ── MODAL ────────────────── */
+.mo{position:fixed;inset:0;background:rgba(0,0,0,.5);
+  display:flex;align-items:center;justify-content:center;z-index:500;
+  opacity:0;pointer-events:none;transition:opacity .2s}
+.mo.open{opacity:1;pointer-events:all}
+.mc{background:var(--w);border-radius:var(--r);width:560px;max-width:95vw;
+  max-height:88vh;overflow-y:auto;box-shadow:var(--shm);
+  transform:translateY(10px);transition:transform .2s}
+.mo.open .mc{transform:translateY(0)}
+.mc.sm{width:400px}
+.mh{background:var(--lp);color:#fff;padding:12px 16px;
+  display:flex;align-items:center;justify-content:space-between}
+.mh h3{font-size:13px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.mx{cursor:pointer;font-size:17px;opacity:.8}.mx:hover{opacity:1}
+.mb{padding:16px}
+.mf{padding:10px 16px;border-top:1px solid var(--bdr);display:flex;justify-content:flex-end;gap:8px}
+.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* ── EQUIP CARDS ─────────── */
+.eq-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:12px}
+.eq-card{border:1px solid var(--bdr);border-radius:var(--r);overflow:hidden}
+.eq-head{background:var(--ink);color:#fff;padding:7px 10px;display:flex;justify-content:space-between;align-items:flex-start}
+.eq-code{font-size:9px;font-family:monospace;opacity:.7}
+.eq-name{font-size:12px;font-weight:700;margin-top:2px}
+.eq-body{padding:8px 10px}
+.eq-row{display:flex;justify-content:space-between;font-size:11px;padding:2px 0;border-bottom:1px solid var(--bdr)}
+.eq-row:last-child{border-bottom:none}
+.eq-k{color:var(--ink-m)}.eq-v{font-weight:600;font-family:monospace;font-size:10px}
+
+/* ── REPORT PAGE ─────────── */
+.rpt-page{background:#fff;padding:26px 30px;border:1px solid var(--bdr);border-radius:var(--r);margin:12px}
+.rpt-lhd{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid var(--lp);padding-bottom:10px;margin-bottom:14px}
+.rpt-ln{font-size:18px;font-weight:800;color:var(--lp)}
+.rpt-ls{font-size:10px;color:var(--ink-m);margin-top:2px}
+.rpt-ri{text-align:right;font-size:10px;color:var(--ink-m)}
+.rpt-ri strong{display:block;font-size:12px;color:var(--ink);margin-bottom:2px}
+.rpt-meta{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;
+  background:var(--bg);padding:9px 10px;border-radius:var(--r);margin-bottom:12px;border-left:4px solid var(--la)}
+.rm-k{font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-m)}
+.rm-v{font-size:12px;font-weight:700;margin-top:2px}
+.rpt-sec{margin:12px 0}
+.rpt-sec h3{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:#fff;
+  background:var(--ink);padding:4px 9px;border-radius:var(--r);margin-bottom:8px;font-weight:700}
+.rpt-kv{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px}
+.kv .k{font-size:9px;color:var(--ink-m);text-transform:uppercase;letter-spacing:.06em}
+.kv .v{font-size:12px;font-weight:600}
+.rpt-sign{display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-top:28px;padding-top:14px;border-top:1px solid var(--bdr)}
+.sign-l{border-top:1px solid var(--ink);padding-top:4px;font-size:9px;color:var(--ink-m);text-transform:uppercase;letter-spacing:.06em}
+.rpt-disc{font-size:9px;color:var(--ink-l);font-style:italic;margin-top:14px;line-height:1.6;border-top:1px dashed var(--bdr);padding-top:8px}
+
+/* ── QUOTE ────────────────── */
+.q-tbl{width:100%;border-collapse:collapse}
+.q-tbl th{background:var(--ink);color:#fff;padding:6px 9px;font-size:10px;text-transform:uppercase;letter-spacing:.08em}
+.q-tbl td{padding:5px 7px;border-bottom:1px solid var(--bdr)}
+.q-totals{min-width:240px;margin-left:auto}
+.q-tline{display:flex;justify-content:space-between;padding:4px 0;font-size:13px}
+.q-tline.grand{border-top:2px solid var(--ink);font-size:15px;font-weight:800;padding-top:7px;margin-top:3px}
+
+/* ── CUSTOMIZE ────────────── */
+.cust-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:14px}
+.cust-preview{background:var(--bg);border-radius:var(--r);border:1px solid var(--bdr);padding:12px;min-height:80px}
+.cp-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-m);margin-bottom:6px}
+.color-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:4px}
+.sw{width:26px;height:26px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all .15s;flex-shrink:0}
+.sw.act{border-color:var(--ink);transform:scale(1.15)}
+.sw-cust{display:flex;align-items:center;gap:4px;margin-top:5px}
+.sw-cust input[type=color]{width:26px;height:26px;border:none;padding:0;cursor:pointer;border-radius:50%;background:none}
+
+/* ── PROGRESS BAR ─────────── */
+.prog-track{display:flex;align-items:flex-start;padding:10px 12px 28px;position:relative}
+.prog-step-w{display:flex;flex-direction:column;align-items:center;flex:1;position:relative}
+.prog-dot{width:26px;height:26px;border-radius:50%;border:2px solid var(--bdr);
+  background:var(--w);display:flex;align-items:center;justify-content:center;
+  font-size:10px;font-weight:700;color:var(--ink-m);position:relative;z-index:1}
+.prog-line{flex:1;height:2px;background:var(--bdr);margin-top:13px;margin-left:-3px;margin-right:-3px}
+.prog-lbl{position:absolute;top:30px;font-size:9px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.06em;color:var(--ink-l);white-space:nowrap;transform:translateX(-50%);left:50%}
+.prog-step-w.done .prog-dot{background:var(--green);border-color:var(--green);color:#fff}
+.prog-step-w.done .prog-line{background:var(--green)}
+.prog-step-w.done .prog-lbl{color:var(--green)}
+.prog-step-w.act .prog-dot{background:var(--lp);border-color:var(--lp);color:#fff}
+.prog-step-w.act .prog-lbl{color:var(--lp);font-weight:800}
+.prog-row{display:flex;align-items:center;width:100%}
+
+/* ── TOAST ────────────────── */
+#toast{
+  position:fixed;bottom:18px;right:18px;background:var(--ink);color:#fff;
+  padding:8px 14px;border-radius:var(--r);font-size:12px;font-weight:600;
+  box-shadow:var(--shm);z-index:9999;transform:translateY(14px);opacity:0;
+  transition:all .25s;pointer-events:none;border-left:3px solid var(--la);
+}
+#toast.show{transform:translateY(0);opacity:1}
+
+/* ── LOADING ──────────────── */
+.loading-spinner{display:flex;align-items:center;justify-content:center;padding:30px;color:var(--ink-l);font-size:12px;gap:8px}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--ink-g);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--ink-l)}
+
+@media print{#topnav,#left-panel,#right-panel,.btn,button{display:none!important}.rpt-page{margin:0;border:none}}
+</style>
+</head>
+<body>
+<!-- ═══ FILE:// STARTUP NOTICE ══════════════════════════════ -->
+<div id="startup-notice" style="display:none;position:fixed;inset:0;background:#1a1a2e;z-index:99999;align-items:center;justify-content:center;font-family:'Raleway',Arial,sans-serif">
+  <div style="background:#fff;border-radius:8px;width:600px;max-width:95vw;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.4)">
+    <div style="background:#da1f26;color:#fff;padding:20px 24px">
+      <div style="font-size:28px;margin-bottom:6px">🏗️</div>
+      <div style="font-size:18px;font-weight:800;letter-spacing:.03em">Civil Lab Manager</div>
+      <div style="font-size:12px;opacity:.8;margin-top:3px">One quick step before you start</div>
+    </div>
+    <div style="padding:24px">
+      <div style="background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:12px 16px;margin-bottom:20px;display:flex;gap:10px;align-items:flex-start">
+        <span style="font-size:20px">⚠️</span>
+        <div>
+          <div style="font-weight:700;font-size:13px;color:#856404">Cannot run from a local file</div>
+          <div style="font-size:12px;color:#856404;margin-top:3px">Firebase requires the app to be served over HTTP — not opened directly as a file. This is a browser security restriction, not a bug.</div>
+        </div>
+      </div>
+      <div style="font-weight:700;font-size:14px;margin-bottom:14px;color:#333">Choose one of these options:</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+
+        <div style="border:2px solid #da1f26;border-radius:6px;padding:14px">
+          <div style="font-weight:800;font-size:13px;color:#da1f26;margin-bottom:6px">⚡ Option 1 — VS Code (Easiest)</div>
+          <ol style="font-size:12px;color:#555;padding-left:16px;line-height:1.8">
+            <li>Install <strong>VS Code</strong></li>
+            <li>Install the <strong>Live Server</strong> extension</li>
+            <li>Right-click the HTML file</li>
+            <li>Click <strong>"Open with Live Server"</strong></li>
+          </ol>
+          <div style="margin-top:8px;font-size:11px;background:#fce8e9;padding:6px 8px;border-radius:4px;color:#da1f26">Opens at <strong>http://127.0.0.1:5500</strong></div>
+        </div>
+
+        <div style="border:2px solid #1565c0;border-radius:6px;padding:14px">
+          <div style="font-weight:800;font-size:13px;color:#1565c0;margin-bottom:6px">🐍 Option 2 — Python (If installed)</div>
+          <ol style="font-size:12px;color:#555;padding-left:16px;line-height:1.8">
+            <li>Open a terminal / Command Prompt</li>
+            <li>Navigate to the file folder:<br><code style="background:#eee;padding:1px 5px;border-radius:3px">cd Downloads</code></li>
+            <li>Run:<br><code style="background:#eee;padding:1px 5px;border-radius:3px">python -m http.server 8080</code></li>
+            <li>Open <strong>http://localhost:8080</strong></li>
+          </ol>
+        </div>
+
+        <div style="border:2px solid #2e7d32;border-radius:6px;padding:14px">
+          <div style="font-weight:800;font-size:13px;color:#2e7d32;margin-bottom:6px">🔥 Option 3 — Firebase Hosting</div>
+          <ol style="font-size:12px;color:#555;padding-left:16px;line-height:1.8">
+            <li>Install Firebase CLI:<br><code style="background:#eee;padding:1px 5px;border-radius:3px">npm install -g firebase-tools</code></li>
+            <li>Run <code style="background:#eee;padding:1px 5px;border-radius:3px">firebase init hosting</code></li>
+            <li>Place this file in the <code style="background:#eee;padding:1px 5px;border-radius:3px">public</code> folder</li>
+            <li>Run <code style="background:#eee;padding:1px 5px;border-radius:3px">firebase deploy</code></li>
+          </ol>
+        </div>
+
+        <div style="border:2px solid #6a1b9a;border-radius:6px;padding:14px">
+          <div style="font-weight:800;font-size:13px;color:#6a1b9a;margin-bottom:6px">🌐 Also Required: Authorize Domain</div>
+          <ol style="font-size:12px;color:#555;padding-left:16px;line-height:1.8">
+            <li>Go to <a href="https://console.firebase.google.com" target="_blank" style="color:#6a1b9a">console.firebase.google.com</a></li>
+            <li>Open your project → <strong>Authentication</strong></li>
+            <li>Click <strong>Settings → Authorized domains</strong></li>
+            <li>Add <strong>localhost</strong> or your domain</li>
+          </ol>
+        </div>
+
+      </div>
+
+      <div style="margin-top:16px;padding:12px 14px;background:#e8f5e9;border-radius:6px;border-left:4px solid #2e7d32">
+        <div style="font-size:12px;color:#1b5e20;line-height:1.7">
+          <strong>Firestore Security Rules</strong> — also paste these into your Firebase Console → Firestore → Rules tab before going live. The rules file was included in your project package.
+        </div>
+      </div>
+
+      <div style="margin-top:14px;display:flex;justify-content:space-between;align-items:center">
+        <div style="font-size:11px;color:#999">This notice only appears when opened as a local file</div>
+        <button onclick="document.getElementById('startup-notice').style.display='none'" style="background:#da1f26;color:#fff;border:none;padding:8px 18px;border-radius:4px;font-family:'Raleway',Arial,sans-serif;font-weight:700;font-size:12px;cursor:pointer;text-transform:uppercase;letter-spacing:.05em">I understand, continue anyway</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+// Show startup notice only when running as file://
+if(window.location.protocol==='file:'){
+  document.getElementById('startup-notice').style.display='flex';
+}
+</script>
+
+
+<!-- ═══ AUTH SCREEN ════════════════════════════════════════ -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="al-name" id="auth-lab-name">Civil Lab Manager</div>
+      <div class="al-sub">Laboratory Management System</div>
+    </div>
+    <div class="auth-body">
+      <div class="auth-tabs">
+        <div class="auth-tab active" onclick="switchAuthTab('login')">Sign In</div>
+        <div class="auth-tab" onclick="switchAuthTab('register')">Register</div>
+        <div class="auth-tab" onclick="switchAuthTab('newlab')">New Lab</div>
+      </div>
+
+      <!-- LOGIN -->
+      <div class="auth-panel active" id="ap-login">
+        <div class="auth-err" id="err-login"></div>
+        <div class="fg"><label>Email</label><input type="email" id="l-email" placeholder="you@lab.com"></div>
+        <div class="fg"><label>Password</label><input type="password" id="l-pass" placeholder="••••••••"></div>
+        <button class="btn-auth" onclick="doLogin()">Sign In</button>
+        <div class="auth-alt">Don't have an account? <a onclick="switchAuthTab('register')">Register</a></div>
+      </div>
+
+      <!-- REGISTER (join existing lab) -->
+      <div class="auth-panel" id="ap-register">
+        <div class="auth-err" id="err-register"></div>
+        <div class="fg"><label>First Name</label><input type="text" id="r-first" placeholder="First name"></div>
+        <div class="fg"><label>Last Name</label><input type="text" id="r-last" placeholder="Last name"></div>
+        <div class="fg"><label>Email</label><input type="email" id="r-email" placeholder="you@lab.com"></div>
+        <div class="fg"><label>Password</label><input type="password" id="r-pass" placeholder="Minimum 6 characters"></div>
+        <div class="fg"><label>Role</label>
+          <select id="r-role">
+            <option value="technician">Lab Technician</option>
+            <option value="technologist">Technologist</option>
+            <option value="manager">Lab Manager</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        <div class="fg"><label>Lab Code <span style="font-size:10px;color:var(--ink-l)">(from your Lab Admin)</span></label>
+          <input type="text" id="r-labcode" placeholder="LAB-XXXX-0000" style="text-transform:uppercase">
+        </div>
+        <button class="btn-auth" onclick="doRegister()">Create Account</button>
+        <div class="auth-alt">Already have an account? <a onclick="switchAuthTab('login')">Sign In</a></div>
+      </div>
+
+      <!-- NEW LAB -->
+      <div class="auth-panel" id="ap-newlab">
+        <div class="auth-err" id="err-newlab"></div>
+        <p style="font-size:12px;color:var(--ink-m);margin-bottom:12px">Register a new laboratory. You will become the Admin and receive a Lab Code to share with your team.</p>
+        <div class="fg"><label>Lab Name</label><input type="text" id="nl-name" placeholder="e.g. UNAM Civil Engineering Lab"></div>
+        <div class="fg"><label>Institution / Company</label><input type="text" id="nl-inst" placeholder="University / Organisation name"></div>
+        <div class="fg"><label>Your Name</label><input type="text" id="nl-aname" placeholder="Full name"></div>
+        <div class="fg"><label>Admin Email</label><input type="email" id="nl-email" placeholder="admin@lab.com"></div>
+        <div class="fg"><label>Password</label><input type="password" id="nl-pass" placeholder="Minimum 6 characters"></div>
+        <button class="btn-auth" onclick="doNewLab()">Register Lab &amp; Sign In</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SETUP WIZARD ═══════════════════════════════════════ -->
+<div id="wizard-screen">
+  <div class="wizard-card">
+    <div class="wizard-head">
+      <h2>Lab Setup Wizard</h2>
+      <span class="wiz-step-ind" id="wiz-step-ind">Step 1 of 4</span>
+    </div>
+    <div class="wiz-progress"><div class="wiz-progress-bar" id="wiz-bar" style="width:25%"></div></div>
+    <div class="wizard-body">
+
+      <!-- Step 1: Lab Type -->
+      <div class="wiz-step active" id="ws-1">
+        <div style="font-weight:700;font-size:14px;margin-bottom:4px">What type of laboratory is this?</div>
+        <div style="font-size:12px;color:var(--ink-m);margin-bottom:8px">This determines the default test catalog and report templates.</div>
+        <div class="lt-grid" id="lt-grid">
+          <div class="lt-card sel" onclick="selLT(this,'bitumen')" data-lt="bitumen"><div class="lt-icon">🛣️</div><div class="lt-name">Bitumen / Asphalt</div></div>
+          <div class="lt-card" onclick="selLT(this,'concrete')" data-lt="concrete"><div class="lt-icon">🧱</div><div class="lt-name">Concrete &amp; Cement</div></div>
+          <div class="lt-card" onclick="selLT(this,'soils')" data-lt="soils"><div class="lt-icon">⛰️</div><div class="lt-name">Soils &amp; Geotechnical</div></div>
+          <div class="lt-card" onclick="selLT(this,'aggregates')" data-lt="aggregates"><div class="lt-icon">🪨</div><div class="lt-name">Aggregates</div></div>
+          <div class="lt-card" onclick="selLT(this,'water')" data-lt="water"><div class="lt-icon">💧</div><div class="lt-name">Water / Environmental</div></div>
+          <div class="lt-card" onclick="selLT(this,'general')" data-lt="general"><div class="lt-icon">🔬</div><div class="lt-name">General Civil</div></div>
+        </div>
+      </div>
+
+      <!-- Step 2: Test Catalog -->
+      <div class="wiz-step" id="ws-2">
+        <div style="font-weight:700;font-size:14px;margin-bottom:4px">Select your test catalog</div>
+        <div style="font-size:12px;color:var(--ink-m);margin-bottom:4px">Choose all tests your lab performs. You can add more later.</div>
+        <div style="margin-bottom:6px"><button class="btn btn-sm btn-d" onclick="wSelAll(true)">Select All</button> <button class="btn btn-sm btn-gh" style="background:var(--ink-g);color:var(--ink)" onclick="wSelAll(false)">Clear</button></div>
+        <div class="test-cat-grid" id="tc-grid"></div>
+        <div style="margin-top:10px;display:flex;gap:6px;align-items:center">
+          <input type="text" id="custom-test-inp" placeholder="Custom test name…" style="border:1px solid var(--bdr);padding:5px 9px;border-radius:var(--r);font-family:var(--font);font-size:12px;flex:1">
+          <button class="btn btn-sm btn-d" onclick="addCustomTest()">+ Add</button>
+        </div>
+      </div>
+
+      <!-- Step 3: Customization -->
+      <div class="wiz-step" id="ws-3">
+        <div style="font-weight:700;font-size:14px;margin-bottom:4px">Brand your lab system</div>
+        <div style="font-size:12px;color:var(--ink-m);margin-bottom:10px">Set colours, prefix, and disclaimer. All can be changed later in Settings.</div>
+        <div class="frow c2" style="padding:0">
+          <div class="fg2"><label>Sample ID Prefix</label><input type="text" id="wiz-prefix" placeholder="UNAM-" value="LAB-"></div>
+          <div class="fg2"><label>VAT Rate (%)</label><input type="number" id="wiz-vat" value="15" min="0" max="100"></div>
+          <div class="fg2"><label>Contact Email</label><input type="email" id="wiz-email" placeholder="lab@org.com"></div>
+          <div class="fg2"><label>Phone</label><input type="text" id="wiz-phone" placeholder="+264 ..."></div>
+        </div>
+        <div style="margin-top:10px">
+          <div class="cp-label">Primary Colour</div>
+          <div class="color-row" id="sw-primary"></div>
+          <div class="sw-cust"><input type="color" id="cp-primary" value="#da1f26" oninput="custC(this,'primary')"> <span style="font-size:11px;color:var(--ink-m)">Custom</span></div>
+        </div>
+        <div style="margin-top:10px">
+          <div class="cp-label">Accent Colour</div>
+          <div class="color-row" id="sw-accent"></div>
+          <div class="sw-cust"><input type="color" id="cp-accent" value="#febe18" oninput="custC(this,'accent')"> <span style="font-size:11px;color:var(--ink-m)">Custom</span></div>
+        </div>
+        <div style="margin-top:10px">
+          <div class="fg2"><label>Report Disclaimer</label>
+            <textarea id="wiz-disc" rows="3" placeholder="This report relates only to the samples supplied…"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 4: Done -->
+      <div class="wiz-step" id="ws-4">
+        <div style="text-align:center;padding:20px 0">
+          <div style="font-size:48px;margin-bottom:12px">🎉</div>
+          <div style="font-weight:800;font-size:16px;margin-bottom:6px">Lab setup complete!</div>
+          <div style="font-size:13px;color:var(--ink-m);margin-bottom:16px">Your Lab Code — share this with your team members so they can register:</div>
+          <div id="lab-code-display" style="font-size:22px;font-weight:800;font-family:monospace;color:var(--lp);background:var(--red-p);padding:12px 20px;border-radius:var(--r);display:inline-block;letter-spacing:.1em"></div>
+          <div style="font-size:11px;color:var(--ink-l);margin-top:10px">Keep this code safe. Team members enter it when registering their accounts.</div>
+        </div>
+      </div>
+
+    </div>
+    <div class="wizard-foot">
+      <button class="btn btn-gh" id="wiz-back" style="background:var(--ink-g);color:var(--ink)" onclick="swBack()" style="display:none">← Back</button>
+      <span></span>
+      <button class="btn btn-r" id="wiz-next" onclick="swNext()">Next →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MAIN APP ═══════════════════════════════════════════ -->
+<div id="main-app">
+
+  <!-- TOP NAV -->
+  <nav id="topnav">
+    <div class="nav-brand">
+      <div>
+        <div id="nb-name">Lab Manager</div>
+        <span class="nb-sub" id="nb-inst">Civil Engineering</span>
+        <span class="nb-code" id="nb-code"></span>
+      </div>
+    </div>
+    <div class="nav-tabs">
+      <div class="nav-tab active" data-view="request" onclick="switchNav(this)"><span class="ti">📋</span>Request</div>
+      <div class="nav-tab" data-view="samples" onclick="switchNav(this)"><span class="ti">🧪</span>Samples</div>
+      <div class="nav-tab" data-view="tasksheet" onclick="switchNav(this)"><span class="ti">📑</span>Task Sheet</div>
+      <div class="nav-tab" data-view="evaluate" onclick="switchNav(this)"><span class="ti">🔬</span>Evaluate</div>
+      <div class="nav-tab" data-view="report" onclick="switchNav(this)"><span class="ti">📄</span>Report</div>
+      <div class="nav-tab" data-view="quotations" onclick="switchNav(this)"><span class="ti">💼</span>Quotations</div>
+      <div class="nav-tab" data-view="equipment" onclick="switchNav(this)"><span class="ti">⚙️</span>Equipment</div>
+      <div class="nav-tab admin-only" data-view="clients" onclick="switchNav(this)" id="nav-clients"><span class="ti">👥</span>Clients</div>
+      <div class="nav-tab admin-only" data-view="users" onclick="switchNav(this)" id="nav-users"><span class="ti">🔑</span>Users</div>
+      <div class="nav-tab admin-only" data-view="customize" onclick="switchNav(this)" id="nav-customize"><span class="ti">🎨</span>Customize</div>
+      <div class="nav-tab" data-view="settings" onclick="switchNav(this)"><span class="ti">🔧</span>Settings</div>
+    </div>
+    <div class="nav-end">
+      <div class="nav-user" id="nav-user-info">
+        <span>👤</span><span id="nav-user-name">User</span>
+      </div>
+      <div class="nav-logout" onclick="doLogout()">Log out ⏻</div>
+    </div>
+  </nav>
+
+  <!-- SHELL -->
+  <div id="shell">
+
+    <!-- LEFT PANEL -->
+    <div id="left-panel">
+      <div class="panel-hdr">
+        <span class="ph-title" id="lp-title">Requests</span>
+        <div class="ph-actions">
+          <button class="btn btn-gh btn-sm" onclick="toggleArchive()">Archive</button>
+          <button class="btn btn-g btn-sm" onclick="openModal('mo-new-req')">+ Add</button>
+        </div>
+      </div>
+      <div class="srch">
+        <input type="text" id="req-srch" placeholder="Search…" oninput="renderLeftPanel()">
+        <span style="color:var(--ink-l);font-size:13px">🔍</span>
+      </div>
+      <div class="panel-cols"><span>Sample ID</span><span>Client</span><span>Date</span></div>
+      <div class="panel-list" id="panel-list"></div>
+      <div class="lab-switcher" id="lab-switcher">
+        <div class="ls-label">Switch Lab (Admin)</div>
+        <select class="ls-select" id="lab-switch-sel" onchange="switchLab(this.value)">
+          <option value="">Loading labs…</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main-content">
+
+      <!-- ── REQUEST VIEW ── -->
+      <div class="view active" id="view-request" style="flex-direction:column;gap:10px;overflow-y:auto">
+        <div class="sb">
+          <div class="sbh"><span class="sbh-t">Test Profiles</span><button class="btn btn-gh btn-sm">Full list ⊞</button></div>
+          <div class="prof-grid" id="prof-grid"></div>
+        </div>
+        <div class="sb">
+          <div class="sbh"><span class="sbh-t" id="tests-tile-label">Tests</span><button class="btn btn-gh btn-sm">Full list ⊞</button></div>
+          <div class="test-grid" id="test-grid"></div>
+        </div>
+        <div class="sb">
+          <div class="sbh gold"><span class="sbh-t">Customer</span>
+            <div class="sbh-a"><button class="btn btn-d btn-sm" onclick="openModal('mo-add-client')">+ Add</button><button class="btn btn-d btn-sm">≡</button></div>
+          </div>
+          <div class="frow"><div class="fg2"><input type="text" id="req-customer" list="cl-dl" placeholder="Start typing client name…"></div></div>
+        </div>
+        <div class="sb">
+          <div class="sbh gold"><span class="sbh-t">Ordering Contact</span>
+            <div class="sbh-a"><button class="btn btn-d btn-sm">≡</button></div>
+          </div>
+          <div class="frow c2">
+            <div class="fg2"><label>Engineer / Requester</label><input type="text" id="req-eng" placeholder="Name"></div>
+            <div class="fg2"><label>Project Name</label><input type="text" id="req-proj" placeholder="Project"></div>
+            <div class="fg2"><label>Contact</label><input type="text" id="req-phone" placeholder="+264…"></div>
+            <div class="fg2"><label>Email</label><input type="email" id="req-email" placeholder="client@email.com"></div>
+          </div>
+        </div>
+        <div class="sb">
+          <div class="sbh dark"><span class="sbh-t">Additional Notes</span></div>
+          <div class="frow"><div class="fg2"><textarea id="req-notes" placeholder="Special instructions, test standards, priority…"></textarea></div></div>
+        </div>
+      </div>
+
+      <!-- ── SAMPLES VIEW ── -->
+      <div class="view" id="view-samples" style="flex-direction:column;gap:10px;overflow-y:auto;padding:2px">
+        <div class="stats-row">
+          <div class="sc"><div class="sc-lbl">Total</div><div class="sc-val" id="st-t">—</div><div class="sc-sub">All samples</div></div>
+          <div class="sc gold-t"><div class="sc-lbl">In Progress</div><div class="sc-val" id="st-p">—</div><div class="sc-sub">Active</div></div>
+          <div class="sc green-t"><div class="sc-lbl">Completed</div><div class="sc-val" id="st-c">—</div><div class="sc-sub">This month</div></div>
+          <div class="sc dark-t"><div class="sc-lbl">Urgent</div><div class="sc-val" id="st-u">—</div><div class="sc-sub">Priority</div></div>
+        </div>
+        <div class="sb" style="flex:1">
+          <div class="sbh">
+            <span class="sbh-t">Sample Register — JEDS-FT-001</span>
+            <div class="sbh-a">
+              <input type="text" id="smp-srch" placeholder="Search…" oninput="renderSamples()" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;padding:4px 8px;border-radius:var(--r);font-family:var(--font);font-size:11px;width:130px">
+              <select id="smp-sf" onchange="renderSamples()" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;padding:4px 6px;border-radius:var(--r);font-family:var(--font);font-size:11px">
+                <option value="">All statuses</option>
+                <option>Received</option><option>In Progress</option><option>Completed</option><option>Reported</option>
+              </select>
+              <button class="btn btn-g btn-sm" onclick="openModal('mo-new-req')">+ Register</button>
+            </div>
+          </div>
+          <div style="overflow-x:auto">
+            <table class="dt"><thead><tr>
+              <th>Sample ID</th><th>Date Recv</th><th>Client</th><th>Requester</th>
+              <th>Project</th><th>Description</th><th>No.</th><th>Tests</th>
+              <th>Status</th><th>Priority</th><th>Action</th>
+            </tr></thead><tbody id="smp-tbody"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── TASK SHEET VIEW ── -->
+      <div class="view" id="view-tasksheet" style="flex-direction:column;gap:10px;overflow-y:auto;padding:2px">
+        <div class="sb" style="flex:1">
+          <div class="sbh"><span class="sbh-t">Active Task Sheet</span></div>
+          <div style="overflow-x:auto">
+            <table class="dt"><thead><tr>
+              <th>Sample ID</th><th>Tests Required</th><th>Assigned To</th><th>Date Testing</th><th>Progress</th><th>Status</th><th>Action</th>
+            </tr></thead><tbody id="task-tbody"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── EVALUATE VIEW ── -->
+      <div class="view" id="view-evaluate" style="flex-direction:column;gap:10px;overflow-y:auto;padding:2px">
+        <div class="sb">
+          <div class="sbh"><span class="sbh-t">Select Sample to Evaluate</span></div>
+          <div class="frow c2">
+            <div class="fg2"><label>Sample ID</label>
+              <select id="eval-sel" onchange="loadEval()"><option value="">— select —</option></select>
+            </div>
+          </div>
+        </div>
+        <div id="eval-ws"></div>
+      </div>
+
+      <!-- ── REPORT VIEW ── -->
+      <div class="view" id="view-report" style="flex-direction:column;overflow-y:auto">
+        <div style="padding:10px;display:flex;flex-direction:column;gap:10px">
+          <div class="sb">
+            <div class="sbh"><span class="sbh-t">Generate Test Report</span></div>
+            <div class="frow c3">
+              <div class="fg2"><label>Sample ID</label><select id="rpt-sel"><option value="">— select —</option></select></div>
+              <div class="fg2"><label>Report Number</label><input type="text" id="rpt-num" placeholder="RPT-2026-001"></div>
+              <div class="fg2"><label>Report Date</label><input type="date" id="rpt-date"></div>
+              <div class="fg2"><label>Status</label><select id="rpt-status"><option>PRELIMINARY</option><option>FINAL</option></select></div>
+              <div class="fg2"><label>Tested By</label><input type="text" id="rpt-tester"></div>
+              <div class="fg2"><label>Lab Manager</label><input type="text" id="rpt-mgr"></div>
+            </div>
+            <div style="padding:0 14px 12px;display:flex;gap:8px">
+              <button class="btn btn-r" onclick="genReport()">Generate Report</button>
+              <button class="btn btn-d" onclick="window.print()">🖨 Print / PDF</button>
+            </div>
+          </div>
+          <div id="rpt-out"></div>
+        </div>
+      </div>
+
+      <!-- ── QUOTATIONS VIEW ── -->
+      <div class="view" id="view-quotations" style="flex-direction:column;overflow-y:auto;padding:2px">
+        <div class="sb">
+          <div class="sbh"><span class="sbh-t">Quotation — JEDS-FT-059</span>
+            <div class="sbh-a"><button class="btn btn-gh btn-sm" onclick="window.print()">🖨 Print</button></div>
+          </div>
+          <div class="frow c3">
+            <div class="fg2"><label>Quote No.</label><input type="text" id="q-num" placeholder="QUO-2026-001"></div>
+            <div class="fg2"><label>Date</label><input type="date" id="q-date"></div>
+            <div class="fg2"><label>Client</label><input type="text" id="q-client" list="cl-dl2" placeholder="Client name"><datalist id="cl-dl2"></datalist></div>
+            <div class="fg2"><label>Validity (days)</label><input type="number" id="q-valid" value="30"></div>
+          </div>
+          <div style="padding:0 14px 10px">
+            <table class="q-tbl"><thead><tr><th>Description</th><th>Unit Cost (N$)</th><th>Qty</th><th>Amount (N$)</th><th></th></tr></thead>
+            <tbody id="q-lines"></tbody></table>
+            <button class="btn btn-d btn-sm" onclick="addQL()" style="margin-top:6px">+ Add Line</button>
+          </div>
+          <div style="padding:0 14px 12px;display:flex;justify-content:flex-end">
+            <div class="q-totals">
+              <div class="q-tline"><span style="color:var(--ink-m)">Subtotal</span><span id="q-sub" style="font-family:monospace">N$ 0.00</span></div>
+              <div class="q-tline"><span style="color:var(--ink-m)" id="q-vat-label">VAT (15%)</span><span id="q-vat" style="font-family:monospace">N$ 0.00</span></div>
+              <div class="q-tline grand"><span>TOTAL</span><span id="q-tot" style="font-family:monospace;color:var(--lp)">N$ 0.00</span></div>
+            </div>
+          </div>
+          <div style="padding:0 14px 14px;display:flex;gap:8px">
+            <button class="btn btn-r" onclick="saveQuote()">Save Quotation</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── EQUIPMENT VIEW ── -->
+      <div class="view" id="view-equipment" style="flex-direction:column;overflow-y:auto;padding:2px">
+        <div class="sb" style="flex:1">
+          <div class="sbh">
+            <span class="sbh-t">Equipment Inventory — JEDS-FT-055</span>
+            <div class="sbh-a">
+              <input type="text" id="eq-srch" placeholder="Search…" oninput="renderEquip()" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;padding:4px 8px;border-radius:var(--r);font-family:var(--font);font-size:11px;width:120px">
+              <select id="eq-cat" onchange="renderEquip()" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;padding:4px 6px;border-radius:var(--r);font-family:var(--font);font-size:11px">
+                <option value="">All categories</option>
+              </select>
+              <button class="btn btn-g btn-sm" onclick="openModal('mo-add-equip')">+ Add</button>
+            </div>
+          </div>
+          <div class="eq-grid" id="eq-grid"></div>
+        </div>
+      </div>
+
+      <!-- ── CLIENTS VIEW (admin) ── -->
+      <div class="view" id="view-clients" style="flex-direction:column;overflow-y:auto;padding:2px">
+        <div class="sb" style="flex:1">
+          <div class="sbh">
+            <span class="sbh-t">Client Directory</span>
+            <div class="sbh-a">
+              <input type="text" id="cl-srch" placeholder="Search…" oninput="renderClients()" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;padding:4px 8px;border-radius:var(--r);font-family:var(--font);font-size:11px;width:130px">
+              <button class="btn btn-g btn-sm" onclick="openModal('mo-add-client')">+ Add Client</button>
+            </div>
+          </div>
+          <table class="dt"><thead><tr><th>Company</th><th>Contact Person</th><th>Phone</th><th>Email</th><th>Registered By</th><th>Date</th></tr></thead>
+          <tbody id="cl-tbody"></tbody></table>
+        </div>
+      </div>
+
+      <!-- ── USERS VIEW (admin) ── -->
+      <div class="view" id="view-users" style="flex-direction:column;overflow-y:auto;padding:2px">
+        <div class="sb" style="flex:1">
+          <div class="sbh"><span class="sbh-t">Lab Users &amp; Roles</span></div>
+          <table class="dt"><thead><tr><th>Name</th><th>Role</th><th>Email</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="users-tbody"></tbody></table>
+        </div>
+      </div>
+
+      <!-- ── CUSTOMIZE VIEW (admin) ── -->
+      <div class="view" id="view-customize" style="flex-direction:column;overflow-y:auto;padding:2px">
+        <div class="sb">
+          <div class="sbh"><span class="sbh-t">Global Lab Customization</span></div>
+          <div class="cust-grid">
+            <div>
+              <div style="font-weight:700;font-size:12px;margin-bottom:10px;text-transform:uppercase;letter-spacing:.05em">Identity</div>
+              <div class="fg2" style="margin-bottom:8px"><label>Lab Name</label><input type="text" id="gc-name" placeholder="Lab name"></div>
+              <div class="fg2" style="margin-bottom:8px"><label>Institution</label><input type="text" id="gc-inst" placeholder="Institution"></div>
+              <div class="fg2" style="margin-bottom:8px"><label>Contact Email</label><input type="email" id="gc-email"></div>
+              <div class="fg2" style="margin-bottom:8px"><label>Phone</label><input type="text" id="gc-phone"></div>
+              <div class="fg2" style="margin-bottom:8px"><label>Sample ID Prefix</label><input type="text" id="gc-prefix" placeholder="UNAM-"></div>
+              <div class="fg2" style="margin-bottom:8px"><label>VAT Rate (%)</label><input type="number" id="gc-vat" min="0" max="100" value="15"></div>
+              <div class="fg2"><label>Tagline / Accreditation</label><input type="text" id="gc-tagline" placeholder="ISO 17025 accredited…"></div>
+            </div>
+            <div>
+              <div style="font-weight:700;font-size:12px;margin-bottom:10px;text-transform:uppercase;letter-spacing:.05em">Brand Colors</div>
+              <div class="cp-label">Primary Colour</div>
+              <div class="color-row" id="gc-sw-primary"></div>
+              <div class="sw-cust"><input type="color" id="gc-cp-primary" value="#da1f26" oninput="custC(this,'primary')"> <span style="font-size:11px;color:var(--ink-m)">Custom</span></div>
+              <div style="margin-top:10px">
+              <div class="cp-label">Accent Colour</div>
+              <div class="color-row" id="gc-sw-accent"></div>
+              <div class="sw-cust"><input type="color" id="gc-cp-accent" value="#febe18" oninput="custC(this,'accent')"> <span style="font-size:11px;color:var(--ink-m)">Custom</span></div>
+              </div>
+              <div style="margin-top:12px">
+              <div class="cp-label">Preview</div>
+              <div class="cust-preview" id="gc-preview">
+                <div style="background:var(--lp);color:#fff;padding:6px 10px;border-radius:var(--r);font-weight:700;font-size:12px;margin-bottom:6px" id="prev-primary-bar">Primary colour</div>
+                <div style="background:var(--la);color:var(--ink);padding:6px 10px;border-radius:var(--r);font-weight:700;font-size:12px" id="prev-accent-bar">Accent colour</div>
+              </div>
+              </div>
+              <div style="margin-top:12px">
+              <div class="fg2"><label>Report Disclaimer</label>
+                <textarea id="gc-disc" rows="4" placeholder="This report relates only to the samples supplied…"></textarea>
+              </div>
+              </div>
+            </div>
+          </div>
+          <div style="padding:0 14px 14px;display:flex;gap:8px">
+            <button class="btn btn-r" onclick="saveGC()">Save Customization</button>
+            <button class="btn btn-d" onclick="loadGC()">↺ Reset</button>
+          </div>
+        </div>
+        <!-- Test Catalog editor -->
+        <div class="sb">
+          <div class="sbh"><span class="sbh-t">Test Catalog</span><button class="btn btn-gh btn-sm" onclick="openModal('mo-add-test')">+ Add Test</button></div>
+          <div style="padding:12px;display:flex;flex-wrap:wrap;gap:6px" id="catalog-chips"></div>
+        </div>
+      </div>
+
+      <!-- ── SETTINGS VIEW ── -->
+      <div class="view" id="view-settings" style="flex-direction:column;overflow-y:auto;padding:2px">
+        <div class="sb">
+          <div class="sbh"><span class="sbh-t">My Profile</span></div>
+          <div class="frow c2">
+            <div class="fg2"><label>First Name</label><input type="text" id="s-first"></div>
+            <div class="fg2"><label>Last Name</label><input type="text" id="s-last"></div>
+            <div class="fg2"><label>Email</label><input type="email" id="s-email" disabled style="background:var(--bg)"></div>
+            <div class="fg2"><label>Role</label><input type="text" id="s-role" disabled style="background:var(--bg)"></div>
+          </div>
+          <div style="padding:0 14px 14px"><button class="btn btn-r" onclick="saveSettings()">Save Profile</button></div>
+        </div>
+        <div class="sb">
+          <div class="sbh dark"><span class="sbh-t">Change Password</span></div>
+          <div class="frow c2">
+            <div class="fg2"><label>New Password</label><input type="password" id="s-newpass" placeholder="Minimum 6 characters"></div>
+            <div class="fg2"><label>Confirm Password</label><input type="password" id="s-confpass"></div>
+          </div>
+          <div style="padding:0 14px 14px"><button class="btn btn-d" onclick="changePass()">Update Password</button></div>
+        </div>
+      </div>
+
+    </div><!-- /main-content -->
+
+    <!-- RIGHT PANEL -->
+    <div id="right-panel">
+      <div class="sum-hdr">Tests Summary</div>
+      <div class="sum-body" id="sum-body">
+        <div style="padding:16px;font-size:11px;color:var(--ink-l);text-align:center">No tests selected</div>
+      </div>
+      <button class="sum-save" onclick="saveRequest()">💾 Save Request</button>
+    </div>
+
+  </div><!-- /shell -->
+</div><!-- /main-app -->
+
+<!-- ═══ MODALS ═════════════════════════════════════════════ -->
+
+<!-- New Sample Request -->
+<div class="mo" id="mo-new-req">
+  <div class="mc">
+    <div class="mh"><h3>Register New Sample</h3><span class="mx" onclick="closeModal('mo-new-req')">✕</span></div>
+    <div class="mb"><div class="mgrid">
+      <div class="fg2"><label>Date Received</label><input type="date" id="nr-date"></div>
+      <div class="fg2"><label>Client / Company</label><input type="text" id="nr-client" list="cl-dl" placeholder="Client name"></div>
+      <div class="fg2"><label>Requester Name</label><input type="text" id="nr-req"></div>
+      <div class="fg2"><label>Contact Number</label><input type="text" id="nr-phone"></div>
+      <div class="fg2"><label>Email</label><input type="email" id="nr-email"></div>
+      <div class="fg2"><label>Project Name</label><input type="text" id="nr-proj"></div>
+      <div class="fg2"><label>Sample Description</label><input type="text" id="nr-desc"></div>
+      <div class="fg2"><label>No. of Samples</label><input type="number" id="nr-num" min="1" value="1"></div>
+      <div class="fg2"><label>Tests Required</label><input type="text" id="nr-tests" placeholder="e.g. Marshall Stability"></div>
+      <div class="fg2"><label>Priority</label>
+        <select id="nr-prio"><option>Standard Priority</option><option>Urgent</option><option>Use ASTM</option><option>Use SANS</option></select>
+      </div>
+      <div class="fg2"><label>Status</label>
+        <select id="nr-status"><option>Received</option><option>In Progress</option></select>
+      </div>
+      <div class="fg2"><label>Notes</label><input type="text" id="nr-notes" placeholder="Optional"></div>
+    </div></div>
+    <div class="mf">
+      <button class="btn btn-d" onclick="closeModal('mo-new-req')">Cancel</button>
+      <button class="btn btn-r" onclick="addSample()">Register Sample</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Client -->
+<div class="mo" id="mo-add-client">
+  <div class="mc">
+    <div class="mh"><h3>Add Client</h3><span class="mx" onclick="closeModal('mo-add-client')">✕</span></div>
+    <div class="mb"><div class="mgrid">
+      <div class="fg2"><label>Company Name</label><input type="text" id="nc-co"></div>
+      <div class="fg2"><label>Contact Person</label><input type="text" id="nc-cp"></div>
+      <div class="fg2"><label>Phone</label><input type="text" id="nc-ph"></div>
+      <div class="fg2"><label>Email</label><input type="email" id="nc-em"></div>
+      <div class="fg2" style="grid-column:1/-1"><label>Address</label><textarea id="nc-ad" rows="2"></textarea></div>
+    </div></div>
+    <div class="mf">
+      <button class="btn btn-d" onclick="closeModal('mo-add-client')">Cancel</button>
+      <button class="btn btn-r" onclick="addClient()">Save Client</button>
+    </div>
+  </div>
+</div>
+
+<!-- Update Status -->
+<div class="mo" id="mo-upd-status">
+  <div class="mc sm">
+    <div class="mh"><h3>Update Status</h3><span class="mx" onclick="closeModal('mo-upd-status')">✕</span></div>
+    <div class="mb" style="display:flex;flex-direction:column;gap:10px">
+      <div class="fg2"><label>Sample: <strong id="upd-sid"></strong></label>
+        <select id="upd-status"><option>Received</option><option>In Progress</option><option>Completed</option><option>Reported</option></select>
+      </div>
+      <div class="fg2"><label>Date Tested</label><input type="date" id="upd-date"></div>
+      <div class="fg2"><label>Tested By</label><input type="text" id="upd-by"></div>
+      <div class="fg2"><label>Notes</label><textarea id="upd-notes" rows="2"></textarea></div>
+    </div>
+    <div class="mf">
+      <button class="btn btn-d" onclick="closeModal('mo-upd-status')">Cancel</button>
+      <button class="btn btn-r" onclick="saveStatus()">Update</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Equipment -->
+<div class="mo" id="mo-add-equip">
+  <div class="mc">
+    <div class="mh"><h3>Add Equipment</h3><span class="mx" onclick="closeModal('mo-add-equip')">✕</span></div>
+    <div class="mb"><div class="mgrid">
+      <div class="fg2"><label>Equipment Code</label><input type="text" id="eq-code"></div>
+      <div class="fg2"><label>Name</label><input type="text" id="eq-name"></div>
+      <div class="fg2"><label>Category</label><input type="text" id="eq-catv"></div>
+      <div class="fg2"><label>Manufacturer</label><input type="text" id="eq-mfr"></div>
+      <div class="fg2"><label>Serial Number</label><input type="text" id="eq-serial"></div>
+      <div class="fg2"><label>Inventory No.</label><input type="text" id="eq-inv"></div>
+      <div class="fg2"><label>Status</label>
+        <select id="eq-stat"><option>operational</option><option>needs maintenance</option><option>out of service</option></select>
+      </div>
+      <div class="fg2"><label>Next Calibration</label><input type="date" id="eq-calib"></div>
+      <div class="fg2"><label>Next Maintenance</label><input type="date" id="eq-maint"></div>
+    </div></div>
+    <div class="mf">
+      <button class="btn btn-d" onclick="closeModal('mo-add-equip')">Cancel</button>
+      <button class="btn btn-r" onclick="addEquip()">Save Equipment</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Custom Test to Catalog -->
+<div class="mo" id="mo-add-test">
+  <div class="mc sm">
+    <div class="mh"><h3>Add Test to Catalog</h3><span class="mx" onclick="closeModal('mo-add-test')">✕</span></div>
+    <div class="mb" style="display:flex;flex-direction:column;gap:10px">
+      <div class="fg2"><label>Test Name</label><input type="text" id="ct-name" placeholder="e.g. BBR Creep Stiffness"></div>
+      <div class="fg2"><label>Standard</label><input type="text" id="ct-std" placeholder="e.g. SANS 4001-BT20"></div>
+      <div class="fg2"><label>Category</label><input type="text" id="ct-cat" placeholder="e.g. Bitumen Properties"></div>
+    </div>
+    <div class="mf">
+      <button class="btn btn-d" onclick="closeModal('mo-add-test')">Cancel</button>
+      <button class="btn btn-r" onclick="addCustomT()">Add Test</button>
+    </div>
+  </div>
+</div>
+
+<datalist id="cl-dl"></datalist>
+<div id="toast"></div>
+
+<script type="module">
+// ═══════════════════════════════════════════════════════════
+//  FIREBASE  (ESM v10)
+// ═══════════════════════════════════════════════════════════
+import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import{getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged,updatePassword}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import{getFirestore,doc,setDoc,getDoc,addDoc,updateDoc,deleteDoc,collection,query,where,getDocs,orderBy,serverTimestamp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+const firebaseConfig={apiKey:"AIzaSyBvuQIWVM3FxdDidNzkwbU7BjA3Ubjgxc4",authDomain:"civillabmanager.firebaseapp.com",projectId:"civillabmanager",storageBucket:"civillabmanager.firebasestorage.app",messagingSenderId:"202580272739",appId:"1:202580272739:web:ee4f2f15134e2c52d67a56",measurementId:"G-LPNGTDZQMC"};
+const app=initializeApp(firebaseConfig);
+const auth=getAuth(app);
+const db=getFirestore(app);
+
+// ═══ STATE ════════════════════════════════════════════════
+let CU=null,CL=null,LAB=null; // current user doc, lab id, lab doc
+let samples=[],clients=[],equipment=[],users=[],allLabs=[];
+let selTests=[],qLines=[{desc:'',cost:0,qty:1}];
+let wizStep=1,wizLabType='bitumen',wizTests=[],wizPrimary='#da1f26',wizAccent='#febe18';
+let gcPrimary='#da1f26',gcAccent='#febe18';
+let showArchive=false;
+let updSid='';
+
+// ═══ TEST CATALOG BY LAB TYPE ═════════════════════════════
+const TEST_CATALOGS={
+  bitumen:[
+    {name:'Marshall Stability',std:'SANS 3001-AS2',cat:'Marshall Testing'},
+    {name:'Stability & Flow',std:'SANS 3001-AS2',cat:'Marshall Testing'},
+    {name:'Bulk Density',std:'SANS 3001-AS2',cat:'Marshall Testing'},
+    {name:'Marshall Quotient',std:'COLTO',cat:'Marshall Testing'},
+    {name:'Needle Penetration',std:'SANS 4001-BT5',cat:'Bitumen Properties'},
+    {name:'Softening Point',std:'SANS 4001-BT7',cat:'Bitumen Properties'},
+    {name:'Ductility',std:'SANS 4001-BT8',cat:'Bitumen Properties'},
+    {name:'Flash & Fire Point',std:'SANS 4001-BT10',cat:'Bitumen Properties'},
+    {name:'Dynamic Viscosity',std:'SANS 4001-BT17',cat:'Bitumen Properties'},
+    {name:'BBR Creep Stiffness',std:'SANS 4001-BT20',cat:'Ageing Tests'},
+    {name:'RTFOT',std:'SANS 4001-BT15',cat:'Ageing Tests'},
+    {name:'PAV Ageing',std:'ASTM PP1',cat:'Ageing Tests'},
+    {name:'Binder S.G.',std:'ASTM D70',cat:'Density & Gravity'},
+    {name:'Aggregate ARD',std:'SANS 3001-AG10',cat:'Density & Gravity'},
+    {name:'Water Absorption',std:'SANS 3001-AG10',cat:'Density & Gravity'},
+    {name:'Sieve Analysis',std:'SANS 3001-AG4',cat:'Gradation'},
+    {name:'Premix Analysis',std:'SANS 3001-AS3',cat:'Gradation'},
+    {name:'Film Thickness',std:'Calc',cat:'Gradation'},
+    {name:'ITS',std:'SANS 3001-AS4',cat:'Structural'},
+  ],
+  concrete:[
+    {name:'Compressive Strength',std:'SANS 5863',cat:'Structural'},
+    {name:'Flexural Strength',std:'SANS 5864',cat:'Structural'},
+    {name:'Tensile Splitting',std:'SANS 6253',cat:'Structural'},
+    {name:'Water Absorption',std:'SANS 5845',cat:'Durability'},
+    {name:'Chloride Permeability',std:'SANS 3001-CO3',cat:'Durability'},
+    {name:'Mix Design',std:'SANS 5861',cat:'Mix Design'},
+    {name:'Slump Test',std:'SANS 5862',cat:'Fresh Concrete'},
+    {name:'Air Content',std:'SANS 6078',cat:'Fresh Concrete'},
+  ],
+  soils:[
+    {name:'Atterberg Limits',std:'SANS 3001-GR20',cat:'Classification'},
+    {name:'Particle Size Distribution',std:'SANS 3001-GR1',cat:'Classification'},
+    {name:'Proctor Compaction',std:'SANS 3001-GR30',cat:'Compaction'},
+    {name:'Modified Proctor',std:'SANS 3001-GR31',cat:'Compaction'},
+    {name:'CBR',std:'SANS 3001-GR40',cat:'Strength'},
+    {name:'Direct Shear',std:'SANS 3001-GR50',cat:'Strength'},
+    {name:'Triaxial (UU)',std:'SANS 3001-GR54',cat:'Strength'},
+    {name:'Oedometer Consolidation',std:'SANS 3001-GR60',cat:'Consolidation'},
+  ],
+  aggregates:[
+    {name:'Los Angeles Abrasion',std:'SANS 3001-AG10',cat:'Mechanical'},
+    {name:'Aggregate Impact Value',std:'SANS 3001-AG11',cat:'Mechanical'},
+    {name:'Flakiness Index',std:'SANS 3001-AG12',cat:'Shape'},
+    {name:'10% FACT',std:'SANS 3001-AG9',cat:'Mechanical'},
+    {name:'Sieve Analysis',std:'SANS 3001-AG4',cat:'Gradation'},
+    {name:'Bulk Relative Density',std:'SANS 3001-AG10',cat:'Density'},
+    {name:'Apparent Relative Density',std:'SANS 3001-AG10',cat:'Density'},
+  ],
+  water:[
+    {name:'pH Measurement',std:'ISO 10523',cat:'Chemical'},
+    {name:'Turbidity',std:'ISO 7027',cat:'Physical'},
+    {name:'Total Dissolved Solids',std:'ISO 11885',cat:'Chemical'},
+    {name:'Coliform Count',std:'ISO 9308-1',cat:'Microbiological'},
+    {name:'BOD',std:'ISO 5815',cat:'Chemical'},
+    {name:'COD',std:'ISO 15705',cat:'Chemical'},
+  ],
+  general:[
+    {name:'Compressive Strength',std:'SANS 5863',cat:'Structural'},
+    {name:'Marshall Stability',std:'SANS 3001-AS2',cat:'Bitumen'},
+    {name:'Sieve Analysis',std:'SANS 3001-AG4',cat:'Gradation'},
+    {name:'CBR',std:'SANS 3001-GR40',cat:'Soils'},
+    {name:'Flash & Fire Point',std:'SANS 4001-BT10',cat:'Bitumen'},
+    {name:'Proctor Compaction',std:'SANS 3001-GR30',cat:'Soils'},
+  ]
+};
+
+const COLOR_SWATCHES=['#da1f26','#e53935','#b71c1c','#c2185b','#6a1b9a','#1565c0','#00838f','#2e7d32','#558b2f','#f57f17','#e65100','#4e342e','#333333'];
+const ACC_SWATCHES=['#febe18','#ffd54f','#ff8f00','#ffcc02','#a5d6a7','#80deea','#ef9a9a','#ffffff','#b0bec5'];
+
+// ═══ HELPERS ══════════════════════════════════════════════
+const $=id=>document.getElementById(id);
+function fd(d){if(!d)return'—';try{return new Date(d).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}catch{return d}}
+function toast(m,c=''){const t=$('toast');t.textContent=m;t.style.borderLeftColor=c||'var(--la)';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800)}
+function openModal(id){$(id).classList.add('open')}
+function closeModal(id){$(id).classList.remove('open')}
+function badge(s){const m={Received:'bb','In Progress':'bgo',Completed:'bg',Reported:'bd',Pass:'bg',Fail:'br',operational:'bg','out of service':'br','needs maintenance':'bgo','Urgent':'br','Standard Priority':'bd',admin:'bp',manager:'bb',technologist:'bg',technician:'bd'};return`<span class="bdg ${m[s]||'bd'}">${s}</span>`}
+function genId(prefix='SAMP'){return prefix+'-'+Date.now().toString(36).toUpperCase().slice(-5)}
+
+// ═══ THEME APPLICATION ════════════════════════════════════
+function applyTheme(primary,accent){
+  document.documentElement.style.setProperty('--lp',primary);
+  document.documentElement.style.setProperty('--la',accent);
+}
+
+// ═══ AUTH UI ══════════════════════════════════════════════
+window.switchAuthTab=function(tab){
+  document.querySelectorAll('.auth-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.auth-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelector(`.auth-tab:nth-child(${tab==='login'?1:tab==='register'?2:3})`).classList.add('active');
+  $('ap-'+tab).classList.add('active');
+};
+
+// ═══ AUTH ACTIONS ═════════════════════════════════════════
+window.doLogin=async function(){
+  const e=$('l-email').value.trim(),p=$('l-pass').value;
+  $('err-login').classList.remove('show');
+  if(!e||!p){showErr('err-login','Enter email and password');return}
+  try{await signInWithEmailAndPassword(auth,e,p)}
+  catch(ex){showErr('err-login',ex.message.replace('Firebase:','').trim())}
+};
+
+window.doRegister=async function(){
+  const first=$('r-first').value.trim(),last=$('r-last').value.trim(),
+    email=$('r-email').value.trim(),pass=$('r-pass').value,
+    role=$('r-role').value,labCode=$('r-labcode').value.trim().toUpperCase();
+  if(!first||!last||!email||!pass||!labCode){showErr('err-register','All fields are required');return}
+  // find lab by code
+  try{
+    const lq=query(collection(db,'labs'),where('labCode','==',labCode));
+    const ls=await getDocs(lq);
+    if(ls.empty){showErr('err-register','Lab code not found. Check with your Lab Admin.');return}
+    const labDoc=ls.docs[0];
+    const cred=await createUserWithEmailAndPassword(auth,email,pass);
+    await setDoc(doc(db,'users',cred.user.uid),{
+      firstName:first,lastName:last,email,role,
+      labId:labDoc.id,labCode,status:'active',
+      createdAt:serverTimestamp()
+    });
+    toast('Account created! Welcome, '+first);
+  }catch(ex){showErr('err-register',ex.message.replace('Firebase:','').trim())}
+};
+
+window.doNewLab=async function(){
+  const labName=$('nl-name').value.trim(),inst=$('nl-inst').value.trim(),
+    aname=$('nl-aname').value.trim(),email=$('nl-email').value.trim(),pass=$('nl-pass').value;
+  if(!labName||!inst||!aname||!email||!pass){showErr('err-newlab','All fields required');return}
+  const labCode='LAB-'+labName.replace(/[^A-Z0-9]/gi,'').toUpperCase().slice(0,4)+'-'+Math.floor(1000+Math.random()*9000);
+  try{
+    const cred=await createUserWithEmailAndPassword(auth,email,pass);
+    const nameParts=aname.split(' ');
+    // create lab doc
+    const labRef=await addDoc(collection(db,'labs'),{
+      name:labName,institution:inst,labCode,
+      labType:'general',
+      primaryColor:'#da1f26',accentColor:'#febe18',
+      samplePrefix:'SAMP-',vatRate:15,
+      disclaimer:'This report relates only to the samples supplied to this laboratory.',
+      tagline:'',phone:'',email:'',
+      testCatalog:TEST_CATALOGS.general,
+      adminUid:cred.user.uid,
+      createdAt:serverTimestamp()
+    });
+    // create admin user doc
+    await setDoc(doc(db,'users',cred.user.uid),{
+      firstName:nameParts[0]||aname,lastName:nameParts.slice(1).join(' ')||'',
+      email,role:'admin',labId:labRef.id,labCode,status:'active',
+      createdAt:serverTimestamp()
+    });
+    toast('Lab registered! Lab Code: '+labCode);
+    // wizard will show after auth state change
+  }catch(ex){showErr('err-newlab',ex.message.replace('Firebase:','').trim())}
+};
+
+window.doLogout=async function(){
+  await signOut(auth);
+  CU=null;CL=null;LAB=null;samples=[];clients=[];equipment=[];
+  $('main-app').classList.remove('visible');
+  $('auth-screen').classList.remove('hidden');
+  switchAuthTab('login');
+};
+
+function showErr(id,msg){const el=$(id);el.textContent=msg;el.classList.add('show')}
+
+// ═══ AUTH STATE ═══════════════════════════════════════════
+onAuthStateChanged(auth,async user=>{
+  if(!user){
+    $('auth-screen').classList.remove('hidden');
+    $('main-app').classList.remove('visible');
+    return;
+  }
+  $('auth-screen').classList.add('hidden');
+  // load user doc
+  const udoc=await getDoc(doc(db,'users',user.uid));
+  if(!udoc.exists()){toast('User profile not found. Contact admin.','var(--red)');return}
+  CU={...udoc.data(),uid:user.uid};
+  CL=CU.labId;
+  // load lab doc
+  const ldoc=await getDoc(doc(db,'labs',CL));
+  if(!ldoc.exists()){toast('Lab not found.','var(--red)');return}
+  LAB={...ldoc.data(),id:CL};
+  // check if new lab (no tests in catalog) → show wizard
+  if(LAB.setupDone){
+    initApp();
+  } else {
+    initWizard();
+  }
+});
+
+// ═══ INIT APP ═════════════════════════════════════════════
+async function initApp(){
+  applyTheme(LAB.primaryColor||'#da1f26',LAB.accentColor||'#febe18');
+  $('nb-name').textContent=LAB.name||'Lab Manager';
+  $('nb-inst').textContent=LAB.institution||'';
+  $('nb-code').textContent=LAB.labCode||'';
+  $('nav-user-name').textContent=CU.firstName+' '+CU.lastName;
+  renderNavForRole();
+  $('main-app').classList.add('visible');
+  $('shell').style.display='flex';
+  // Ensure the default view is visible
+  document.querySelectorAll('.view').forEach(v=>v.style.display='none');
+  const defView=$('view-request');
+  if(defView){defView.style.display='flex';}
+  // load all data
+  await Promise.all([loadSamples(),loadClients(),loadEquipment(),loadUsers()]);
+  if(CU.role==='admin')loadAllLabs();
+  renderLeftPanel();
+  renderTestTiles();
+  renderProfileTiles();
+  // pre-fill settings
+  $('s-first').value=CU.firstName||'';
+  $('s-last').value=CU.lastName||'';
+  $('s-email').value=CU.email||'';
+  $('s-role').value=CU.role||'';
+  // pre-fill customize
+  loadGC();
+  $('q-date').value=new Date().toISOString().split('T')[0];
+  $('rpt-date').value=new Date().toISOString().split('T')[0];
+  $('nr-date').value=new Date().toISOString().split('T')[0];
+  buildSwatches('gc-sw-primary','primary',COLOR_SWATCHES);
+  buildSwatches('gc-sw-accent','accent',ACC_SWATCHES);
+  renderCatalogChips();
+  updateDLs();
+  initQL();
+}
+
+function renderNavForRole(){
+  const adminOnly=['nav-clients','nav-users','nav-customize'];
+  const managerCanSee=['nav-clients'];
+  if(CU.role==='admin'){adminOnly.forEach(id=>{$(id)&&$(id).classList.remove('admin-only')});$('lab-switcher')&&$('lab-switcher').classList.add('visible')}
+  else if(CU.role==='manager'){managerCanSee.forEach(id=>{$(id)&&$(id).classList.remove('admin-only')})}
+}
+
+// ═══ FIRESTORE LOADS ══════════════════════════════════════
+async function loadSamples(){
+  const q=query(collection(db,'samples'),where('labId','==',CL),orderBy('createdAt','desc'));
+  const snap=await getDocs(q);
+  samples=snap.docs.map(d=>({id:d.id,...d.data()}));
+  updateSampleStats();
+  populateSelects();
+}
+async function loadClients(){
+  const q=query(collection(db,'clients'),where('labId','==',CL),orderBy('company'));
+  const snap=await getDocs(q);
+  clients=snap.docs.map(d=>({id:d.id,...d.data()}));
+  updateDLs();
+}
+async function loadEquipment(){
+  const q=query(collection(db,'equipment'),where('labId','==',CL),orderBy('name'));
+  const snap=await getDocs(q);
+  equipment=snap.docs.map(d=>({id:d.id,...d.data()}));
+}
+async function loadUsers(){
+  const q=query(collection(db,'users'),where('labId','==',CL));
+  const snap=await getDocs(q);
+  users=snap.docs.map(d=>({id:d.id,...d.data()}));
+}
+async function loadAllLabs(){
+  const snap=await getDocs(collection(db,'labs'));
+  allLabs=snap.docs.map(d=>({id:d.id,...d.data()}));
+  const sel=$('lab-switch-sel');
+  sel.innerHTML=allLabs.map(l=>`<option value="${l.id}"${l.id===CL?' selected':''}>${l.name} (${l.labCode})</option>`).join('');
+}
+
+// ═══ LAB SWITCHER (admin) ═════════════════════════════════
+window.switchLab=async function(labId){
+  if(!labId||labId===CL)return;
+  CL=labId;
+  const ldoc=await getDoc(doc(db,'labs',CL));
+  LAB={...ldoc.data(),id:CL};
+  applyTheme(LAB.primaryColor||'#da1f26',LAB.accentColor||'#febe18');
+  $('nb-name').textContent=LAB.name;
+  $('nb-code').textContent=LAB.labCode;
+  await Promise.all([loadSamples(),loadClients(),loadEquipment(),loadUsers()]);
+  renderLeftPanel();renderTestTiles();renderProfileTiles();renderCatalogChips();loadGC();updateDLs();
+  toast('Switched to: '+LAB.name);
+};
+
+// ═══ WIZARD ═══════════════════════════════════════════════
+function initWizard(){
+  $('wizard-screen').style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.55);align-items:center;justify-content:center;z-index:8000;';
+  wizStep=1;wizTests=[...TEST_CATALOGS.bitumen];
+  buildSwatches('sw-primary','primary',COLOR_SWATCHES,true);
+  buildSwatches('sw-accent','accent',ACC_SWATCHES,true);
+  renderWizStep();
+}
+function renderWizStep(){
+  document.querySelectorAll('.wiz-step').forEach(s=>s.classList.remove('active'));
+  $('ws-'+wizStep).classList.add('active');
+  $('wiz-step-ind').textContent='Step '+wizStep+' of 4';
+  $('wiz-bar').style.width=(wizStep/4*100)+'%';
+  $('wiz-back').style.display=wizStep>1?'inline-flex':'none';
+  $('wiz-next').textContent=wizStep===3?'Finish & Enter App →':wizStep===4?'Enter App →':'Next →';
+  if(wizStep===2)renderWizTestGrid();
+}
+window.selLT=function(el,type){
+  document.querySelectorAll('.lt-card').forEach(c=>c.classList.remove('sel'));
+  el.classList.add('sel');wizLabType=type;
+  wizTests=[...TEST_CATALOGS[type]||TEST_CATALOGS.general];
+};
+function renderWizTestGrid(){
+  const catalog=TEST_CATALOGS[wizLabType]||TEST_CATALOGS.general;
+  $('tc-grid').innerHTML=catalog.map(t=>{
+    const chk=wizTests.some(w=>w.name===t.name);
+    return`<label class="tc-chip${chk?' checked':''}"><input type="checkbox" ${chk?'checked':''} onchange="toggleWizTest(this,'${t.name}')"> ${t.name}<span style="font-size:9px;color:var(--ink-l);display:block">${t.std}</span></label>`;
+  }).join('');
+}
+window.toggleWizTest=function(cb,name){
+  const catalog=TEST_CATALOGS[wizLabType]||[];
+  const t=catalog.find(x=>x.name===name);
+  if(cb.checked){if(t&&!wizTests.some(w=>w.name===name))wizTests.push(t)}
+  else{wizTests=wizTests.filter(w=>w.name!==name)}
+  cb.closest('.tc-chip').classList.toggle('checked',cb.checked);
+};
+window.wSelAll=function(v){wizTests=v?[...TEST_CATALOGS[wizLabType]]:[];renderWizTestGrid()};
+window.addCustomTest=function(){
+  const n=$('custom-test-inp').value.trim();
+  if(!n)return;
+  wizTests.push({name:n,std:'Custom',cat:'Custom'});
+  $('custom-test-inp').value='';
+  renderWizTestGrid();
+  toast('Test added to catalog');
+};
+window.swNext=async function(){
+  if(wizStep===1){wizStep=2;renderWizStep();return}
+  if(wizStep===2){wizStep=3;renderWizStep();return}
+  if(wizStep===3){
+    // save to Firestore
+    const code=LAB.labCode||CU.labCode;
+    const prefix=$('wiz-prefix').value||'SAMP-';
+    const vat=parseFloat($('wiz-vat').value)||15;
+    const email=$('wiz-email').value||'';
+    const phone=$('wiz-phone').value||'';
+    const disc=$('wiz-disc').value||'This report relates only to the samples supplied to this laboratory.';
+    await updateDoc(doc(db,'labs',CL),{
+      labType:wizLabType,testCatalog:wizTests,
+      primaryColor:wizPrimary,accentColor:wizAccent,
+      samplePrefix:prefix,vatRate:vat,email,phone,disclaimer:disc,
+      setupDone:true
+    });
+    LAB={...LAB,testCatalog:wizTests,primaryColor:wizPrimary,accentColor:wizAccent,samplePrefix:prefix,vatRate:vat,setupDone:true};
+    applyTheme(wizPrimary,wizAccent);
+    $('lab-code-display').textContent=code;
+    wizStep=4;renderWizStep();
+    return;
+  }
+  if(wizStep===4){
+    $('wizard-screen').style.display='none';
+    await initApp();
+  }
+};
+window.swBack=function(){if(wizStep>1){wizStep--;renderWizStep()}};
+
+function buildSwatches(containerId,group,colors,isWiz=false){
+  const el=$(containerId);
+  if(!el)return;
+  el.innerHTML=colors.map(c=>`<div class="sw" style="background:${c}" onclick="pickC('${c}','${group}',${isWiz})" title="${c}"></div>`).join('');
+  // mark active
+  const cur=isWiz?(group==='primary'?wizPrimary:wizAccent):(group==='primary'?gcPrimary:gcAccent);
+  el.querySelectorAll('.sw').forEach(s=>{if(s.style.background===cur||s.style.backgroundColor===cur)s.classList.add('act')});
+}
+window.pickC=function(color,group,isWiz){
+  if(isWiz){if(group==='primary')wizPrimary=color;else wizAccent=color;}
+  else{if(group==='primary')gcPrimary=color;else gcAccent=color;updatePreview()}
+  applyTheme(isWiz?wizPrimary:gcPrimary,isWiz?wizAccent:gcAccent);
+  const cid=isWiz?(group==='primary'?'sw-primary':'sw-accent'):(group==='primary'?'gc-sw-primary':'gc-sw-accent');
+  $(cid)&&$(cid).querySelectorAll('.sw').forEach(s=>s.classList.remove('act'));
+  event.target.classList.add('act');
+};
+window.custC=function(inp,group){
+  const color=inp.value;
+  if(group==='primary'){gcPrimary=color}else{gcAccent=color}
+  applyTheme(gcPrimary,gcAccent);updatePreview();
+};
+function updatePreview(){
+  if($('prev-primary-bar'))$('prev-primary-bar').style.background=gcPrimary;
+  if($('prev-accent-bar'))$('prev-accent-bar').style.background=gcAccent;
+}
+
+// ═══ NAV ══════════════════════════════════════════════════
+window.switchNav=function(el){
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.view').forEach(v=>{v.classList.remove('active');v.style.display='none';});
+  el.classList.add('active');
+  const key=el.dataset.view;
+  const view=$('view-'+key);
+  if(view){view.classList.add('active');view.style.display='flex';}
+  onViewOpen(key);
+};
+function onViewOpen(k){
+  if(k==='samples')renderSamples();
+  else if(k==='tasksheet')renderTaskSheet();
+  else if(k==='evaluate')populateEvalSel();
+  else if(k==='report')populateRptSel();
+  else if(k==='equipment')renderEquip();
+  else if(k==='clients')renderClients();
+  else if(k==='users')renderUsers();
+}
+
+// ═══ LEFT PANEL ═══════════════════════════════════════════
+function renderLeftPanel(){
+  const q=($('req-srch').value||'').toLowerCase();
+  const rows=samples.filter(s=>{
+    if(!showArchive&&(s.status==='Reported'))return false;
+    return !q||[s.sampleId,s.client,s.project].join(' ').toLowerCase().includes(q);
+  });
+  $('panel-list').innerHTML=rows.length?rows.map((s,i)=>`
+    <div class="prow${i===0?' active':''}" onclick="selectRow(this,'${s.id}')">
+      <span class="pr-id">${s.sampleId||s.id}</span>
+      <span class="pr-name">${s.client||'—'}</span>
+      <span class="pr-date">${s.dateReceived?new Date(s.dateReceived).toLocaleDateString('en-GB',{day:'2-digit',month:'short'}):'—'}</span>
+      <button class="prow-del" onclick="event.stopPropagation();delSample('${s.id}')">🗑</button>
+    </div>`).join(''):'<div style="padding:14px;font-size:11px;color:var(--ink-l);text-align:center">No samples found</div>';
+}
+window.toggleArchive=function(){showArchive=!showArchive;renderLeftPanel();toast(showArchive?'Showing archived':'Hidden archived')};
+window.selectRow=function(el,id){
+  document.querySelectorAll('.prow').forEach(r=>r.classList.remove('active'));
+  el.classList.add('active');
+  const s=samples.find(x=>x.id===id);
+  if(s){
+    $('req-customer').value=s.client||'';
+    $('req-eng').value=s.requester||'';
+    $('req-proj').value=s.project||'';
+    $('req-phone').value=s.contact||'';
+    $('req-email').value=s.email||'';
+    $('req-notes').value=s.notes||'';
+  }
+};
+
+// ═══ TEST TILES & PROFILES ════════════════════════════════
+function renderTestTiles(){
+  const catalog=LAB?.testCatalog||TEST_CATALOGS.bitumen;
+  $('test-grid').innerHTML=catalog.map(t=>{
+    const sel=selTests.includes(t.name);
+    return`<div class="ttile${sel?' sel':''}" onclick="toggleTest('${t.name}',this)">
+      <div class="tt-i"><span class="tt-n">${t.name}</span><span class="tt-s">${t.std}</span></div>
+      <span class="tt-a">${sel?'−':'+'}</span>
+    </div>`;
+  }).join('');
+}
+window.toggleTest=function(name,el){
+  const i=selTests.indexOf(name);
+  if(i===-1){selTests.push(name);el.classList.add('sel');el.querySelector('.tt-a').textContent='−'}
+  else{selTests.splice(i,1);el.classList.remove('sel');el.querySelector('.tt-a').textContent='+'}
+  renderSummary();
+};
+function renderProfileTiles(){
+  // Build profiles by grouping catalog by cat
+  const cats={};
+  (LAB?.testCatalog||[]).forEach(t=>{if(t.cat){cats[t.cat]=cats[t.cat]||[];cats[t.cat].push(t.name)}});
+  $('prof-grid').innerHTML=Object.keys(cats).slice(0,8).map(cat=>`
+    <label class="prof-chk"><input type="checkbox" onchange="toggleProfile(this,'${cat}')"> ${cat}</label>`).join('');
+}
+window.toggleProfile=function(cb,cat){
+  const tests=(LAB?.testCatalog||[]).filter(t=>t.cat===cat).map(t=>t.name);
+  tests.forEach(t=>{
+    const i=selTests.indexOf(t);
+    if(cb.checked){if(i===-1)selTests.push(t)}else{if(i>-1)selTests.splice(i,1)}
+  });
+  renderTestTiles();renderSummary();
+};
+
+// ─── Summary Panel ───────────────────────────────────────
+const SUM_ORDER=['Marshall Testing','Bitumen Properties','Ageing Tests','Density & Gravity','Gradation','Structural','Classification','Compaction','Strength','Custom'];
+function renderSummary(){
+  const body=$('sum-body');
+  if(!selTests.length){body.innerHTML='<div style="padding:14px;font-size:11px;color:var(--ink-l);text-align:center">No tests selected</div>';return}
+  const cats={};
+  (LAB?.testCatalog||[]).forEach(t=>{if(selTests.includes(t.name)){cats[t.cat]=cats[t.cat]||[];cats[t.cat].push(t.name)}});
+  // uncategorised
+  const catalogNames=(LAB?.testCatalog||[]).map(t=>t.name);
+  selTests.filter(t=>!catalogNames.includes(t)).forEach(t=>{cats['Other']=cats['Other']||[];cats['Other'].push(t)});
+  let html='';
+  [...new Set([...SUM_ORDER,...Object.keys(cats)])].forEach(cat=>{
+    if(!cats[cat]?.length)return;
+    html+=`<div class="sum-cat">${cat}</div>`;
+    cats[cat].forEach(t=>{html+=`<div class="sum-item"><span>${t}</span><button class="sum-rm" onclick="rmTest('${t}')">−</button></div>`});
+  });
+  body.innerHTML=html;
+}
+window.rmTest=function(name){selTests=selTests.filter(t=>t!==name);renderTestTiles();renderSummary()};
+
+// ═══ SAMPLE ACTIONS ═══════════════════════════════════════
+window.addSample=async function(){
+  const client=$('nr-client').value.trim();
+  if(!client){toast('Enter client name','var(--red)');return}
+  const prefix=LAB?.samplePrefix||'SAMP-';
+  const sampleId=prefix+String(samples.length+1).padStart(3,'0');
+  const data={
+    labId:CL,sampleId,
+    dateReceived:$('nr-date').value||new Date().toISOString().split('T')[0],
+    client,requester:$('nr-req').value,
+    contact:$('nr-phone').value,email:$('nr-email').value,
+    project:$('nr-proj').value,desc:$('nr-desc').value,
+    num:parseInt($('nr-num').value)||1,tests:$('nr-tests').value,
+    priority:$('nr-prio').value,status:$('nr-status').value,
+    notes:$('nr-notes').value,dateTested:'',testedBy:'',
+    registeredBy:CU.uid,registeredByRole:CU.role,
+    createdAt:serverTimestamp()
+  };
+  await addDoc(collection(db,'samples'),data);
+  closeModal('mo-new-req');toast('Sample '+sampleId+' registered');
+  await loadSamples();renderLeftPanel();populateSelects();
+};
+
+window.delSample=async function(id){
+  if(!confirm('Delete this sample?'))return;
+  await deleteDoc(doc(db,'samples',id));
+  samples=samples.filter(s=>s.id!==id);
+  renderLeftPanel();renderSamples();toast('Sample deleted');
+};
+
+window.saveRequest=async function(){
+  const client=$('req-customer').value.trim();
+  if(!client){toast('Enter client name','var(--red)');return}
+  if(!selTests.length){toast('Select at least one test','var(--red)');return}
+  const prefix=LAB?.samplePrefix||'SAMP-';
+  const sampleId=prefix+String(samples.length+1).padStart(3,'0');
+  await addDoc(collection(db,'samples'),{
+    labId:CL,sampleId,
+    dateReceived:new Date().toISOString().split('T')[0],
+    client,requester:$('req-eng').value,
+    contact:$('req-phone').value,email:$('req-email').value,
+    project:$('req-proj').value,tests:selTests.join(', '),
+    notes:$('req-notes').value,
+    priority:'Standard Priority',status:'Received',
+    num:1,desc:'',dateTested:'',testedBy:'',
+    registeredBy:CU.uid,registeredByRole:CU.role,
+    createdAt:serverTimestamp()
+  });
+  selTests=[];renderTestTiles();renderSummary();
+  await loadSamples();renderLeftPanel();
+  toast('Request saved — '+sampleId);
+};
+
+window.openUpdStatus=function(id){
+  const s=samples.find(x=>x.id===id);
+  updSid=id;
+  $('upd-sid').textContent=s?.sampleId||id;
+  $('upd-status').value=s?.status||'Received';
+  $('upd-date').value=s?.dateTested||'';
+  $('upd-by').value=s?.testedBy||'';
+  $('upd-notes').value=s?.notes||'';
+  openModal('mo-upd-status');
+};
+window.saveStatus=async function(){
+  await updateDoc(doc(db,'samples',updSid),{
+    status:$('upd-status').value,
+    dateTested:$('upd-date').value,
+    testedBy:$('upd-by').value,
+    notes:$('upd-notes').value
+  });
+  closeModal('mo-upd-status');toast('Status updated');
+  await loadSamples();renderSamples();renderTaskSheet();renderLeftPanel();
+};
+
+// ═══ SAMPLES VIEW ═════════════════════════════════════════
+function updateSampleStats(){
+  $('st-t').textContent=samples.length;
+  $('st-p').textContent=samples.filter(s=>s.status==='In Progress').length;
+  $('st-c').textContent=samples.filter(s=>['Completed','Reported'].includes(s.status)).length;
+  $('st-u').textContent=samples.filter(s=>s.priority==='Urgent').length;
+}
+function renderSamples(){
+  const q=($('smp-srch').value||'').toLowerCase();
+  const sf=$('smp-sf').value;
+  const rows=samples.filter(s=>{
+    const m=!q||[s.sampleId,s.client,s.project,s.desc].join(' ').toLowerCase().includes(q);
+    return m&&(!sf||s.status===sf);
+  });
+  updateSampleStats();
+  $('smp-tbody').innerHTML=rows.map(s=>`<tr>
+    <td style="font-family:monospace;color:var(--lp);font-weight:700">${s.sampleId||s.id}</td>
+    <td>${fd(s.dateReceived)}</td><td><strong>${s.client||'—'}</strong></td>
+    <td>${s.requester||'—'}</td><td>${s.project||'—'}</td>
+    <td style="color:var(--ink-m);font-size:11px">${s.desc||'—'}</td>
+    <td style="text-align:center">${s.num||1}</td>
+    <td style="font-size:11px;color:var(--ink-m);max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.tests||'—'}</td>
+    <td>${badge(s.status)}</td><td>${badge(s.priority)}</td>
+    <td><button class="btn btn-g btn-sm" onclick="openUpdStatus('${s.id}')">Update</button></td>
+  </tr>`).join('')||'<tr><td colspan="11" style="text-align:center;color:var(--ink-l);padding:16px">No samples found</td></tr>';
+}
+
+// ═══ TASK SHEET ═══════════════════════════════════════════
+function renderTaskSheet(){
+  const steps=['Received','In Progress','Completed','Reported'];
+  $('task-tbody').innerHTML=samples.filter(s=>s.status!=='Reported').map(s=>{
+    const si=Math.max(0,steps.indexOf(s.status));
+    const pct=Math.round((si/3)*100);
+    return`<tr>
+      <td style="font-family:monospace;font-weight:700;color:var(--lp)">${s.sampleId||s.id}</td>
+      <td style="font-size:11px;max-width:180px">${s.tests||'—'}</td>
+      <td>${s.testedBy||'<span style="color:var(--ink-l)">Unassigned</span>'}</td>
+      <td>${s.dateTested?fd(s.dateTested):'<span style="color:var(--ink-l)">Pending</span>'}</td>
+      <td style="min-width:120px">
+        <div style="background:var(--bdr);border-radius:20px;height:6px;overflow:hidden">
+          <div style="height:100%;width:${pct}%;background:${pct===100?'var(--green)':pct>50?'var(--la)':'var(--lp)'};border-radius:20px;transition:width .4s"></div>
+        </div><div style="font-size:9px;color:var(--ink-l);margin-top:2px">${pct}%</div>
+      </td>
+      <td>${badge(s.status)}</td>
+      <td><button class="btn btn-r btn-sm" onclick="openUpdStatus('${s.id}')">Update</button></td>
+    </tr>`;
+  }).join('')||'<tr><td colspan="7" style="text-align:center;color:var(--ink-l);padding:16px">No active tasks</td></tr>';
+}
+
+// ═══ EVALUATE ═════════════════════════════════════════════
+function populateEvalSel(){
+  $('eval-sel').innerHTML='<option value="">— select —</option>'+samples.map(s=>`<option value="${s.id}">${s.sampleId||s.id} — ${s.client||''}</option>`).join('');
+}
+window.loadEval=function(){
+  const id=$('eval-sel').value;
+  const ws=$('eval-ws');
+  if(!id){ws.innerHTML='';return}
+  const s=samples.find(x=>x.id===id);
+  const steps=['Received','In Progress','Completed','Reported'];
+  const si=Math.max(0,steps.indexOf(s?.status));
+  const progRow=steps.map((st,i)=>`
+    <div class="prog-step-w${i<si?' done':i===si?' act':''}" style="flex:1;display:flex;flex-direction:column;align-items:center;position:relative;padding-bottom:20px">
+      <div style="display:flex;align-items:center;width:100%">
+        <div class="prog-dot" style="${i<si?'background:var(--green);border-color:var(--green);color:#fff':i===si?'background:var(--lp);border-color:var(--lp);color:#fff':''}">${i<si?'✓':i+1}</div>
+        ${i<3?`<div class="prog-line" style="${i<si?'background:var(--green)':''}"></div>`:''}
+      </div>
+      <div class="prog-lbl" style="${i===si?'color:var(--lp);font-weight:800':i<si?'color:var(--green)':''}">${st}</div>
+    </div>`).join('');
+  ws.innerHTML=`
+    <div class="sb">
+      <div class="sbh gold"><span class="sbh-t">Progress — ${s?.sampleId||id}</span></div>
+      <div style="display:flex;align-items:flex-start;padding:12px 14px 28px">${progRow}</div>
+    </div>
+    <div class="sb">
+      <div class="sbh dark"><span class="sbh-t">Sample Details</span></div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:12px 14px">
+        ${[['Client',s?.client],['Project',s?.project],['Tests',s?.tests],['Status',s?.status],['Priority',s?.priority],['Received',fd(s?.dateReceived)],['Tested By',s?.testedBy||'—'],['Date Tested',fd(s?.dateTested)]].map(([k,v])=>`<div class="kv"><div class="k">${k}</div><div class="v" style="font-size:12px;font-weight:600">${v||'—'}</div></div>`).join('')}
+      </div>
+    </div>`;
+};
+
+// ═══ REPORT ═══════════════════════════════════════════════
+function populateRptSel(){
+  $('rpt-sel').innerHTML='<option value="">— select —</option>'+samples.map(s=>`<option value="${s.id}">${s.sampleId||s.id} — ${s.client||''}</option>`).join('');
+  $('rpt-date').value=new Date().toISOString().split('T')[0];
+}
+function populateSelects(){updateSampleStats();populateRptSel();populateEvalSel()}
+
+window.genReport=function(){
+  const id=$('rpt-sel').value;
+  if(!id){toast('Select a sample','var(--red)');return}
+  const s=samples.find(x=>x.id===id);
+  const rn=$('rpt-num').value||'RPT-'+Date.now().toString().slice(-6);
+  const rd=$('rpt-date').value;
+  const rs=$('rpt-status').value;
+  const tester=$('rpt-tester').value||s?.testedBy||'___________';
+  const mgr=$('rpt-mgr').value||'___________';
+  const disc=LAB?.disclaimer||'This report relates only to the samples supplied to this laboratory.';
+  $('rpt-out').innerHTML=`
+    <div class="rpt-page">
+      <div class="rpt-lhd">
+        <div><div class="rpt-ln">${LAB?.name||'Laboratory'}</div><div class="rpt-ls">${LAB?.institution||''} ${LAB?.tagline?'· '+LAB.tagline:''}</div></div>
+        <div class="rpt-ri"><strong>Test Report ${rn}</strong>${LAB?.email||''}<br>${LAB?.phone||''}</div>
+      </div>
+      <div class="rpt-meta">
+        <div><div class="rm-k">Report Date</div><div class="rm-v">${fd(rd)}</div></div>
+        <div><div class="rm-k">Status</div><div class="rm-v" style="color:var(--lp)">${rs}</div></div>
+        <div><div class="rm-k">Date Received</div><div class="rm-v">${fd(s?.dateReceived)}</div></div>
+        <div><div class="rm-k">Date Tested</div><div class="rm-v">${s?.dateTested?fd(s.dateTested):'—'}</div></div>
+      </div>
+      <div class="rpt-sec"><h3>Client Information</h3>
+        <div class="rpt-kv">
+          ${[['Client',s?.client],['Requester',s?.requester],['Contact',s?.contact],['Email',s?.email],['Project',s?.project],['Lab Code',LAB?.labCode]].map(([k,v])=>`<div class="kv"><div class="k">${k}</div><div class="v">${v||'—'}</div></div>`).join('')}
+        </div>
+      </div>
+      <div class="rpt-sec"><h3>Sample Details</h3>
+        <div class="rpt-kv">
+          ${[['Sample ID',s?.sampleId],['Description',s?.desc],['No. of Samples',s?.num],['Tests Required',s?.tests],['Priority',s?.priority],['Tested By',s?.testedBy||'—']].map(([k,v])=>`<div class="kv"><div class="k">${k}</div><div class="v" style="font-family:${k==='Sample ID'?'monospace':'inherit'}">${v||'—'}</div></div>`).join('')}
+        </div>
+      </div>
+      <div class="rpt-sec"><h3>Test Results</h3>
+        <table class="dt"><thead><tr><th>Test</th><th>Standard</th><th>Result</th><th>Pass/Fail</th></tr></thead>
+        <tbody><tr><td colspan="4" style="text-align:center;color:var(--ink-l);padding:12px;font-style:italic">Results to be entered after testing is complete</td></tr></tbody></table>
+      </div>
+      <div class="rpt-sign">
+        <div class="sign-l">SIGNED: ${tester}<br>Person who performed the test</div>
+        <div class="sign-l">SIGNED: ${mgr}<br>Laboratory Manager</div>
+      </div>
+      <div class="rpt-disc">${disc}</div>
+    </div>`;
+  toast('Report generated');
+};
+
+// ═══ CLIENTS ══════════════════════════════════════════════
+function updateDLs(){
+  const opts=clients.map(c=>`<option value="${c.company}">`).join('');
+  ['cl-dl','cl-dl2'].forEach(id=>{const el=$(id);if(el)el.innerHTML=opts});
+}
+window.addClient=async function(){
+  const company=$('nc-co').value.trim();
+  if(!company){toast('Enter company name','var(--red)');return}
+  await addDoc(collection(db,'clients'),{
+    labId:CL,company,contact:$('nc-cp').value,
+    phone:$('nc-ph').value,email:$('nc-em').value,
+    address:$('nc-ad').value,
+    registeredBy:CU.uid,registeredByRole:CU.role,
+    createdAt:serverTimestamp()
+  });
+  closeModal('mo-add-client');toast('Client added: '+company);
+  await loadClients();renderClients();
+};
+function renderClients(){
+  const q=($('cl-srch')?.value||'').toLowerCase();
+  $('cl-tbody').innerHTML=clients.filter(c=>!q||[c.company,c.contact,c.email].join(' ').toLowerCase().includes(q)).map(c=>`<tr>
+    <td><strong>${c.company}</strong></td><td>${c.contact||'—'}</td>
+    <td>${c.phone||'—'}</td><td>${c.email||'—'}</td>
+    <td>${badge(c.registeredByRole||'—')}</td>
+    <td style="font-size:11px;color:var(--ink-l)">${c.createdAt?.toDate?fd(c.createdAt.toDate()):fd(c.createdAt)}</td>
+  </tr>`).join('')||'<tr><td colspan="6" style="text-align:center;color:var(--ink-l);padding:16px">No clients yet</td></tr>';
+}
+
+// ═══ USERS ════════════════════════════════════════════════
+function renderUsers(){
+  $('users-tbody').innerHTML=users.map(u=>`<tr>
+    <td><strong>${u.firstName} ${u.lastName}</strong></td>
+    <td>${badge(u.role)}</td><td>${u.email}</td>
+    <td>${badge(u.status||'active')}</td>
+    <td>
+      ${CU.role==='admin'&&u.uid!==CU.uid?`<select onchange="updateUserRole('${u.id}',this.value)" style="border:1px solid var(--bdr);padding:3px 6px;border-radius:var(--r);font-family:var(--font);font-size:11px">
+        <option ${u.role==='technician'?'selected':''}>technician</option>
+        <option ${u.role==='technologist'?'selected':''}>technologist</option>
+        <option ${u.role==='manager'?'selected':''}>manager</option>
+        <option ${u.role==='admin'?'selected':''}>admin</option>
+      </select>`:'<span style="color:var(--ink-l);font-size:11px">—</span>'}
+    </td>
+  </tr>`).join('')||'<tr><td colspan="5" style="text-align:center;color:var(--ink-l);padding:16px">No users</td></tr>';
+}
+window.updateUserRole=async function(uid,role){
+  await updateDoc(doc(db,'users',uid),{role});
+  await loadUsers();renderUsers();toast('Role updated');
+};
+
+// ═══ EQUIPMENT ════════════════════════════════════════════
+function renderEquip(){
+  const q=($('eq-srch').value||'').toLowerCase();
+  const cf=$('eq-cat').value;
+  const cats=[...new Set(equipment.map(e=>e.cat).filter(Boolean))];
+  const sel=$('eq-cat');
+  if(sel.options.length<=1)cats.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;sel.appendChild(o)});
+  const items=equipment.filter(e=>{
+    const m=!q||[e.code,e.name,e.cat,e.mfr].join(' ').toLowerCase().includes(q);
+    return m&&(!cf||e.cat===cf);
+  });
+  $('eq-grid').innerHTML=items.map(e=>`
+    <div class="eq-card">
+      <div class="eq-head">
+        <div><div class="eq-code">${e.code||'—'} · ${e.invNo||'No inv#'}</div><div class="eq-name">${e.name}</div></div>
+        ${badge(e.status||'operational')}
+      </div>
+      <div class="eq-body">
+        <div class="eq-row"><span class="eq-k">Category</span><span class="eq-v">${e.cat||'—'}</span></div>
+        <div class="eq-row"><span class="eq-k">Manufacturer</span><span class="eq-v">${e.mfr||'—'}</span></div>
+        <div class="eq-row"><span class="eq-k">Serial</span><span class="eq-v">${e.serial||'—'}</span></div>
+        <div class="eq-row"><span class="eq-k">Next Calibration</span><span class="eq-v">${e.nextCalib?fd(e.nextCalib):'—'}</span></div>
+        <div class="eq-row"><span class="eq-k">Next Maintenance</span><span class="eq-v">${e.nextMaint?fd(e.nextMaint):'—'}</span></div>
+      </div>
+    </div>`).join('')||'<div style="padding:20px;text-align:center;color:var(--ink-l)">No equipment found. Add equipment using the + Add button.</div>';
+}
+window.addEquip=async function(){
+  const name=$('eq-name').value.trim();
+  if(!name){toast('Enter equipment name','var(--red)');return}
+  await addDoc(collection(db,'equipment'),{
+    labId:CL,code:$('eq-code').value,name,cat:$('eq-catv').value,
+    mfr:$('eq-mfr').value,serial:$('eq-serial').value,invNo:$('eq-inv').value,
+    status:$('eq-stat').value,nextCalib:$('eq-calib').value,nextMaint:$('eq-maint').value,
+    createdAt:serverTimestamp()
+  });
+  closeModal('mo-add-equip');toast('Equipment added');
+  await loadEquipment();renderEquip();
+};
+
+// ═══ CUSTOMIZE ════════════════════════════════════════════
+function loadGC(){
+  if(!LAB)return;
+  $('gc-name').value=LAB.name||'';
+  $('gc-inst').value=LAB.institution||'';
+  $('gc-email').value=LAB.email||'';
+  $('gc-phone').value=LAB.phone||'';
+  $('gc-prefix').value=LAB.samplePrefix||'SAMP-';
+  $('gc-vat').value=LAB.vatRate||15;
+  $('gc-tagline').value=LAB.tagline||'';
+  $('gc-disc').value=LAB.disclaimer||'';
+  gcPrimary=LAB.primaryColor||'#da1f26';
+  gcAccent=LAB.accentColor||'#febe18';
+  $('gc-cp-primary').value=gcPrimary;
+  $('gc-cp-accent').value=gcAccent;
+  updatePreview();
+  buildSwatches('gc-sw-primary','primary',COLOR_SWATCHES);
+  buildSwatches('gc-sw-accent','accent',ACC_SWATCHES);
+  const vl=$('q-vat-label');if(vl)vl.textContent=`VAT (${LAB.vatRate||15}%)`;
+}
+window.saveGC=async function(){
+  const updates={
+    name:$('gc-name').value,institution:$('gc-inst').value,
+    email:$('gc-email').value,phone:$('gc-phone').value,
+    samplePrefix:$('gc-prefix').value,vatRate:parseFloat($('gc-vat').value)||15,
+    tagline:$('gc-tagline').value,disclaimer:$('gc-disc').value,
+    primaryColor:gcPrimary,accentColor:gcAccent
+  };
+  await updateDoc(doc(db,'labs',CL),updates);
+  Object.assign(LAB,updates);
+  applyTheme(gcPrimary,gcAccent);
+  $('nb-name').textContent=updates.name;
+  $('nb-inst').textContent=updates.institution;
+  const vl=$('q-vat-label');if(vl)vl.textContent=`VAT (${updates.vatRate}%)`;
+  toast('Customization saved');
+};
+
+// Test catalog management
+function renderCatalogChips(){
+  $('catalog-chips').innerHTML=(LAB?.testCatalog||[]).map((t,i)=>`
+    <div style="display:flex;align-items:center;gap:4px;background:var(--red-p);border:1px solid var(--lp);border-radius:20px;padding:3px 10px 3px 8px;font-size:11px;font-weight:600;color:var(--lp)">
+      ${t.name} <span style="font-size:9px;color:var(--ink-l)">${t.std}</span>
+      ${CU.role==='admin'?`<button onclick="rmCatalogTest(${i})" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:12px;padding:0 0 0 4px">×</button>`:''}
+    </div>`).join('');
+}
+window.addCustomT=async function(){
+  const name=$('ct-name').value.trim(),std=$('ct-std').value.trim(),cat=$('ct-cat').value.trim();
+  if(!name){toast('Enter test name','var(--red)');return}
+  const catalog=[...(LAB?.testCatalog||[]),{name,std:std||'Custom',cat:cat||'Custom'}];
+  await updateDoc(doc(db,'labs',CL),{testCatalog:catalog});
+  LAB.testCatalog=catalog;
+  closeModal('mo-add-test');toast('Test added to catalog');
+  renderCatalogChips();renderTestTiles();renderProfileTiles();
+};
+window.rmCatalogTest=async function(i){
+  const catalog=(LAB?.testCatalog||[]).filter((_,j)=>j!==i);
+  await updateDoc(doc(db,'labs',CL),{testCatalog:catalog});
+  LAB.testCatalog=catalog;
+  renderCatalogChips();renderTestTiles();toast('Test removed');
+};
+
+// ═══ QUOTATION ════════════════════════════════════════════
+function initQL(){
+  qLines=[{desc:'',cost:0,qty:1}];
+  $('q-num').value='QUO-'+new Date().getFullYear()+'-001';
+  $('q-date').value=new Date().toISOString().split('T')[0];
+  renderQL();
+}
+window.addQL=function(){qLines.push({desc:'',cost:0,qty:1});renderQL()};
+function renderQL(){
+  $('q-lines').innerHTML=qLines.map((l,i)=>`<tr>
+    <td><input type="text" value="${l.desc}" placeholder="Test / service description" oninput="qLines[${i}].desc=this.value" style="width:100%;border:1px solid var(--bdr);padding:5px 8px;font-family:var(--font);font-size:12px;border-radius:var(--r)"></td>
+    <td><input type="number" value="${l.cost}" oninput="qLines[${i}].cost=parseFloat(this.value)||0;calcQ()" style="width:85px;text-align:right;border:1px solid var(--bdr);padding:5px 7px;font-family:monospace;font-size:12px;border-radius:var(--r)"></td>
+    <td><input type="number" value="${l.qty}" min="1" oninput="qLines[${i}].qty=parseInt(this.value)||1;calcQ()" style="width:50px;text-align:right;border:1px solid var(--bdr);padding:5px 7px;font-family:monospace;font-size:12px;border-radius:var(--r)"></td>
+    <td style="font-family:monospace;text-align:right;font-size:12px">${(l.cost*l.qty).toFixed(2)}</td>
+    <td><button class="btn btn-sm" style="background:var(--ink-g);color:var(--ink)" onclick="qLines.splice(${i},1);renderQL()">✕</button></td>
+  </tr>`).join('');
+  calcQ();
+}
+function calcQ(){
+  const sub=qLines.reduce((a,l)=>a+l.cost*l.qty,0);
+  const vat=sub*(LAB?.vatRate||15)/100;
+  $('q-sub').textContent='N$ '+sub.toFixed(2);
+  $('q-vat').textContent='N$ '+vat.toFixed(2);
+  $('q-tot').textContent='N$ '+(sub+vat).toFixed(2);
+}
+window.saveQuote=async function(){
+  const client=$('q-client').value;
+  if(!client){toast('Enter client name','var(--red)');return}
+  await addDoc(collection(db,'quotes'),{
+    labId:CL,quoteNum:$('q-num').value,date:$('q-date').value,client,
+    lines:qLines,vatRate:LAB?.vatRate||15,
+    createdBy:CU.uid,createdAt:serverTimestamp()
+  });
+  toast('Quotation saved');initQL();
+};
+
+// ═══ SETTINGS ═════════════════════════════════════════════
+window.saveSettings=async function(){
+  await updateDoc(doc(db,'users',CU.uid),{firstName:$('s-first').value,lastName:$('s-last').value});
+  CU.firstName=$('s-first').value;CU.lastName=$('s-last').value;
+  $('nav-user-name').textContent=CU.firstName+' '+CU.lastName;
+  toast('Profile saved');
+};
+window.changePass=async function(){
+  const np=$('s-newpass').value,cp=$('s-confpass').value;
+  if(!np){toast('Enter new password','var(--red)');return}
+  if(np!==cp){toast('Passwords do not match','var(--red)');return}
+  if(np.length<6){toast('Minimum 6 characters','var(--red)');return}
+  await updatePassword(auth.currentUser,np);
+  $('s-newpass').value='';$('s-confpass').value='';
+  toast('Password updated');
+};
+</script>
+</body>
+</html>
